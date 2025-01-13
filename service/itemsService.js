@@ -14,7 +14,6 @@ async function findCatagoryById(categoryId) {
         }
       );
   
-      console.log("Results:", results, "Metadata:", metadata);
   
       // Return results
       return results;
@@ -34,7 +33,6 @@ async function findCatagoryById(categoryId) {
         }
       );
   
-      console.log("getAllCategories", results);
       return results; // Return the fetched results
     } catch (error) {
       console.error("Error fetching categories:", error.message);
