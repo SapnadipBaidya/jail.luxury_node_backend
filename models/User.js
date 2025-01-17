@@ -47,6 +47,10 @@ User.init(
       type: DataTypes.TEXT, // Store the refresh token for OAuth
       allowNull: true,
     },
+    is_logged_in:{
+      type: DataTypes.TINYINT, // Store the refresh token for OAuth
+      allowNull: true,
+    }
   },
   {
     sequelize,

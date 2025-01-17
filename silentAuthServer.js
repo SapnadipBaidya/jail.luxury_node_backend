@@ -129,8 +129,22 @@ const generateAccessToken = (user) => {
 };
 
 const generateRefreshToken = async (user) => {
+  const now = new Date();
+  const rotationThreshold = 10 * 24 * 60 * 60 * 1000; // 10 days in milliseconds
+
+  // Check if the refresh token was rotated within the last 10 days and iff user is logged in
+  if (user.is_logged_in && user.updated_at && now - user.updated_at < rotationThreshold) {
+    return user.refreshToken; // Return the existing refresh token
+  }
+
+  // Rotate refresh token
   const newRefreshToken = crypto.randomBytes(64).toString("hex");
-  await user.update({ refreshToken: newRefreshToken });
+  await user.update({
+    refreshToken: newRefreshToken,
+    updated_at: now, // Update rotation timestamp
+    is_logged_in:1
+  });
+
   return newRefreshToken;
 };
 
@@ -188,7 +202,7 @@ app.get("/auth/refresh", async (req, res) => {
   if (!refreshToken) return res.status(401).send("No refresh token provided");
 
   try {
-    const user = await User.findOne({ where: { refreshToken } });
+    const user = await User.findOne({ where: { refreshToken ,is_logged_in:1} });
     if (!user) return res.status(401).send("Invalid refresh token");
 
     const newAccessToken = generateAccessToken(user);
@@ -198,7 +212,7 @@ app.get("/auth/refresh", async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "Strict",
-      maxAge: 30 * 24 * 60 * 60 * 1000,
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     });
 
     res.json({ accessToken: newAccessToken });
@@ -215,7 +229,7 @@ app.post("/logout", async (req, res) => {
   if (refreshToken) {
     try {
       const user = await User.findOne({ where: { refreshToken } });
-      if (user) await user.update({ refreshToken: null });
+      if (user) await user.update({ refreshToken: null ,is_logged_in:0});
 
       // Clear the refresh token cookie
       res.clearCookie("refreshToken", {
@@ -245,7 +259,6 @@ app.post("/logout", async (req, res) => {
 // ==========================secured route testing ==========================
 app.get("/secure-data", verifyToken, async (req, res) => {
   try {
-    // Example secured data response
     const user = await User.findOne({ where: { user_id: req.user.user_id } });
 
     if (!user) {
