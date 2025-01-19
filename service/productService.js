@@ -9,7 +9,7 @@ const allowedProductFilters = [
   "gender", "fk_category_id"
 ];
 
-const allowedSortColumns = ["product_name", "product_price_inr", "updated_at"];
+const allowedSortColumns = ["product_name", "product_price_inr", "updated_at","is_popular"];
 
 async function findAllProductsByCategoryId({ 
   productDetailsFilters = {}, 
@@ -28,35 +28,42 @@ async function findAllProductsByCategoryId({
 
     // Define base query with specific columns (avoid SELECT *)
     let query = `
-      SELECT 
-        pd.*, 
-        
-        -- Select product fields and alias them
-        JSON_OBJECT(
-          'product_id', p.product_id,
-          'product_name', p.product_name,
-          'gender', p.gender,
-          'is_enabled', p.is_enabled,
-          'fk_category_id', p.fk_category_id
-        ) AS fk_product_id, 
-        
-        -- Select gallery fields
-        JSON_OBJECT(
-          'gallery_id', g.product_img_id,
-          'image_url', g.product_gallrey
-        ) AS fk_gallery_id,
-        
-        -- Select color fields
-        JSON_OBJECT(
-          'color_id', c.pk_color_id,
-          'color_name', c.color_name,
-          'color_hex', c.color_hex
-        ) AS fk_color_id
-        
+    SELECT 
+    -- Select product fields and alias them
+    JSON_OBJECT(
+      'product_id', p.product_id,
+      'product_price_inr',pd.product_price_inr,
+      'product_name', p.product_name,
+      'gender', p.gender,
+      'is_enabled', p.is_enabled,
+      'fk_category_id', p.fk_category_id,
+      'description',p.description
+    ) AS product_details, 
+    
+    -- Select gallery fields
+    JSON_OBJECT(
+      'gallery_id', g.product_img_id,
+      'image_url', g.product_gallrey
+    ) AS gallery_details,
+    
+    -- Select color fields
+    JSON_OBJECT(
+      'color_id', c.pk_color_id,
+      'color_name', c.color_name,
+      'color_hex', c.color_hex
+    ) AS color_details,
+     
+    -- Select product sizes
+    JSON_OBJECT(
+      'size_name', s.size_name
+    ) AS size_details
+
       FROM 
         products_details pd
       JOIN 
         products p ON pd.fk_product_id = p.product_id
+      LEFT JOIN 
+        sizes s ON pd.fk_size_id = s.pk_size_id  
       LEFT JOIN 
         product_gallarey g ON pd.fk_gallery_id = g.product_img_id
       LEFT JOIN 
