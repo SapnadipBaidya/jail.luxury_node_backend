@@ -4,6 +4,9 @@ async function findAllProductsByCatagoryId (FilterObj){
  return await  productService.findAllProductsByCategoryId(FilterObj);
 }
 
+async function findProductsByPdId (FilterObj){
+    return await  productService.findProductsByPdId(FilterObj);
+   }
+   
 
-
-module.exports = {findAllProductsByCatagoryId};
+module.exports = {findAllProductsByCatagoryId,findProductsByPdId};

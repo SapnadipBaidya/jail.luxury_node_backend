@@ -11,6 +11,15 @@ router.post("/findAllProductsByCatagoryId", async (req, res) => {
   res.send({ status: "success", data });
 });
 
+router.post("/findProductsByPdId", async (req, res) => {
+  // find all categories including its associated Product
+  console.log(req.body)
+  const { payloadObj } = req.body;
+  console.log("payloadObj is :: " + payloadObj);
+  const data = await prouductController.findProductsByPdId(payloadObj);
+  res.send({ status: "success", data });
+});
+
 
 // Export
 module.exports = router;
