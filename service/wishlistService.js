@@ -1,11 +1,94 @@
 const sequelize = require("../config/connection");
+async function addOrEditWishlist({ userId, productsDetailsId, product_id }) {
+    try {
+        // ✅ Validate input parameters
+        if (!userId || !productsDetailsId || !product_id) {
+            throw new Error("Missing required parameters: userId, productsDetailsId, or product_id");
+        }
 
-async function addOrEditWishlist({ productsDetailsId, product_id }) {
-  try {
-  } catch (error) {
-    console.error(error);
-  }
+        // ✅ Check if the user has an existing wishlist
+        const [wishlistResult] = await sequelize.query(
+            `SELECT wishlist_id FROM wishlist WHERE fk_user_id = ?`,
+            { replacements: [userId] }
+        );
+
+        let wishlistId;
+        if (wishlistResult.length > 0) {
+            wishlistId = wishlistResult[0].wishlist_id; // ✅ Use existing wishlist
+        } else {
+            // ✅ Create a new wishlist for the user if none exists
+            const [wishlistInsert] = await sequelize.query(
+                `INSERT INTO wishlist (fk_user_id, created_at) VALUES (?, NOW())`,
+                { replacements: [userId] }
+            );
+            wishlistId = wishlistInsert.insertId; // ✅ Retrieve new wishlist ID
+            console.log(`✅ Created new wishlist for user ID: ${userId} (ID: ${wishlistId})`);
+        }
+
+        console.log("wishlistId is ",wishlistId)
+
+        // ✅ Check if the product is already in the user's wishlist
+        const [existingItem] = await sequelize.query(
+            `SELECT wish_item_id FROM wishlist_items 
+             WHERE fk_products_details_id = ? 
+             AND fk_product_id = ? 
+             AND fk_wishlist_id = ?`,
+            { replacements: [productsDetailsId, product_id, wishlistId] }
+        );
+        console.log("existingItem wish_item_id is ",existingItem)
+        if (existingItem.length > 0) {
+            // ✅ If product exists, DELETE it (Remove from wishlist)
+            await deleteFromUserWishlist({ userId, productsDetailsId, product_id });
+
+            console.log(`✅ Product (ID: ${product_id}) removed from wishlist.`);
+            return { success: true, action: "removed", message: "Product removed from wishlist." };
+        } else {
+            // ✅ If product does NOT exist, INSERT it (Add to wishlist)
+            console.log("proceeding to add  fk_wishlist_id is ",wishlistId)
+            await sequelize.query(
+                `INSERT INTO wishlist_items (fk_products_details_id, fk_product_id, fk_wishlist_id, created_at)
+                 VALUES (?, ?, ?, NOW())`,
+                { replacements: [productsDetailsId, product_id, wishlistId] }
+            );
+
+            console.log(`✅ Product (ID: ${product_id}) added to wishlist.`);
+            return { success: true, action: "added", message: "Product added to wishlist." };
+        }
+    } catch (error) {
+        console.error("❌ Error updating wishlist:", error.message);
+        return { success: false, message: "Failed to update wishlist." };
+    }
 }
+
+async function deleteFromUserWishlist({ userId,productsDetailsId, product_id }) {
+    try {
+        // Validate input parameters
+        if (!productsDetailsId || !product_id) {
+            throw new Error("Missing required parameters: productsDetailsId or product_id");
+        }
+
+        // Execute DELETE query
+        const result = await sequelize.query(
+            `DELETE FROM wishlist_items 
+             WHERE fk_products_details_id = ? 
+             AND fk_product_id = ? AND fk_wishlist_id IN (SELECT wishlist_id FROM wishlist WHERE fk_user_id = ?)`,
+            { replacements: [productsDetailsId, product_id, userId] }
+        );
+
+        // Check if a row was deleted
+        if (result[0].affectedRows > 0) {
+            console.log(`✅ Product (ID: ${product_id}) successfully removed from wishlist.`);
+            return { success: true, message: "Product removed from wishlist." };
+        } else {
+            console.log(`⚠️ Product (ID: ${product_id}) not found in wishlist.`);
+            return { success: false, message: "Product not found in wishlist." };
+        }
+    } catch (error) {
+        console.error("❌ Error deleting from wishlist:", error.message);
+        return { success: false, message: "Failed to remove product from wishlist." };
+    }
+}
+
 
 async function fetchUserWishlist({ userId }) {
   try {
@@ -17,9 +100,11 @@ async function fetchUserWishlist({ userId }) {
       'product_id', p.product_id,
       'product_price_inr', pd.product_price_inr,
       'product_name', p.product_name,
-      'products_details_id',pd.product_detail_id,
-      'image',g.product_gallrey
-    ) AS wishlist_details
+      'products_details_id',pd.product_detail_id
+    ) AS product_details,
+     JSON_OBJECT(
+     'gallery',g.product_gallrey
+     ) AS gallery_details
     FROM 
       wishlist_items wi 
     JOIN 
@@ -46,4 +131,4 @@ async function fetchUserWishlist({ userId }) {
     console.error(error);
   }
 }
-module.exports = { addOrEditWishlist, fetchUserWishlist };
+module.exports = { addOrEditWishlist, fetchUserWishlist,deleteFromUserWishlist };

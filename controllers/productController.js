@@ -1,7 +1,7 @@
 const productService = require("../service/productService")
 
 async function findAllProductsByCatagoryId (FilterObj){
- return await  productService.findAllProductsByCategoryId(FilterObj);
+ return await  productService.findAllProductsByCatagoryId(FilterObj);
 }
 
 async function findProductsByPdId (FilterObj){

@@ -24,7 +24,7 @@ const allowedSortColumns = [
   "is_popular",
 ];
 
-async function findAllProductsByCategoryId({
+async function findAllProductsByCatagoryId({
   productDetailsFilters = {},
   productFilters = {},
   sortBy = "updated_at",
@@ -32,6 +32,7 @@ async function findAllProductsByCategoryId({
   page = 1,
   limit = 10,
   defaultFlag = 0,
+  userId = null, // ✅ Added userId to check wishlist status
 }) {
   try {
     console.log(`Fetching products with filters:
@@ -39,7 +40,7 @@ async function findAllProductsByCategoryId({
       productFilters: ${JSON.stringify(productFilters)}
     `);
 
-    // Define base query with specific columns (avoid SELECT *)
+    // ✅ Define base query with specific columns (avoid SELECT *)
     let query = `
     SELECT 
     JSON_OBJECT(
@@ -49,23 +50,32 @@ async function findAllProductsByCategoryId({
       'gender', p.gender,
       'is_enabled', p.is_enabled,
       'fk_category_id', p.fk_category_id,
-      'description', p.description
+      'description', p.description,
+      'products_details_id', pd.product_detail_id,
+      'is_wishlisted', 
+        IF(EXISTS (
+            SELECT 1 FROM wishlist_items wi 
+            JOIN wishlist w ON wi.fk_wishlist_id = w.wishlist_id 
+            WHERE wi.fk_products_details_id = pd.product_detail_id 
+            AND wi.fk_product_id = p.product_id
+            AND w.fk_user_id = ?
+        ), TRUE, FALSE)
     ) AS product_details, 
     
-    -- Select gallery fields
+    -- ✅ Select gallery fields
     JSON_OBJECT(
       'gallery_id', g.product_img_id,
-      'image_url', g.product_gallrey
+      'gallery', g.product_gallrey
     ) AS gallery_details,
     
-    -- Select color fields
+    -- ✅ Select color fields
     JSON_OBJECT(
       'color_id', c.pk_color_id,
       'color_name', c.color_name,
       'color_hex', c.color_hex
     ) AS color_details,
      
-    -- Select product sizes
+    -- ✅ Select product sizes
     JSON_OBJECT(
       'size_name', s.size_name
     ) AS size_details
@@ -83,10 +93,10 @@ async function findAllProductsByCategoryId({
     WHERE 1=1
     `;
 
-    // Query Parameters
-    const replacements = [];
+    // ✅ Query Parameters (First placeholder is for wishlist check)
+    const replacements = [userId];
 
-    // Apply Dynamic productDetailsFilters (Filtering on products_details)
+    // ✅ Apply Dynamic productDetailsFilters (Filtering on products_details)
     Object.keys(productDetailsFilters).forEach((key) => {
       if (allowedProductDetailsFilters.includes(key)) {
         query += ` AND pd.${key} = ?`;
@@ -94,14 +104,12 @@ async function findAllProductsByCategoryId({
       }
     });
 
-    // Apply Dynamic productFilters (Filtering on products)
+    // ✅ Apply Dynamic productFilters (Filtering on products)
     Object.keys(productFilters).forEach((key) => {
       if (allowedProductFilters.includes(key)) {
-        console.log(
-          `Applying filter -> Key: ${key}, Value: ${productFilters[key]}`
-        );
+        console.log(`Applying filter -> Key: ${key}, Value: ${productFilters[key]}`);
 
-        // ✅ Fixed: Apply price range filtering correctly using product_price_inr
+        // ✅ Handle price range filtering
         if (key === "priceStart" && productFilters.priceEnd) {
           query += ` AND pd.product_price_inr BETWEEN ? AND ?`;
           replacements.push(productFilters.priceStart, productFilters.priceEnd);
@@ -126,9 +134,7 @@ async function findAllProductsByCategoryId({
 
     // ✅ Apply Sorting (Only if it's a valid column)
     if (allowedSortColumns.includes(sortBy)) {
-      query += ` ORDER BY pd.${sortBy} ${
-        sortOrder.toUpperCase() === "DESC" ? "DESC" : "ASC"
-      }`;
+      query += ` ORDER BY pd.${sortBy} ${sortOrder.toUpperCase() === "DESC" ? "DESC" : "ASC"}`;
     } else {
       query += " ORDER BY pd.created_at DESC"; // Default sorting
     }
@@ -217,4 +223,4 @@ catch(error){
 console.error(error)
 }
 }
-module.exports = { findAllProductsByCategoryId, findProductsByPdId };
+module.exports = { findAllProductsByCatagoryId, findProductsByPdId };
