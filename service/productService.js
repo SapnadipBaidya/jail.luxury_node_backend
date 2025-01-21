@@ -30,7 +30,7 @@ async function findAllProductsByCatagoryId({
   sortBy = "updated_at",
   sortOrder = "DESC",
   page = 1,
-  limit = 10,
+  limit = 9,
   defaultFlag = 0,
   userId = null, // ✅ Added userId to check wishlist status
 }) {
@@ -77,7 +77,8 @@ async function findAllProductsByCatagoryId({
      
     -- ✅ Select product sizes
     JSON_OBJECT(
-      'size_name', s.size_name
+      'size_name', s.size_name,
+      'pkSizeId',s.pk_size_id
     ) AS size_details
 
     FROM 
@@ -89,7 +90,7 @@ async function findAllProductsByCatagoryId({
     LEFT JOIN 
       product_gallarey g ON pd.fk_gallery_id = g.product_img_id
     LEFT JOIN 
-      product_colors c ON pd.fk_color_id = c.pk_color_id
+      product_colors c ON pd.fk_color_id = c.pk_color_id   
     WHERE 1=1
     `;
 
@@ -116,7 +117,8 @@ async function findAllProductsByCatagoryId({
         }
         // ✅ Handle size filtering properly
         else if (key === "sizes") {
-          query += ` AND s.size_name = ?`;
+          console.log("sizes arr " ,productFilters[key] )
+          query += ` AND pd.fk_size_id IN (?)`;
           replacements.push(productFilters[key]);
         }
         // ✅ Handle other general filters
