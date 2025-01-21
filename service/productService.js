@@ -1,13 +1,7 @@
 const sequelize = require("../config/connection");
 
 // Allowed columns for filtering & sorting to prevent SQL injection
-const allowedProductDetailsFilters = [
-  "product_price_inr",
-  "fk_color_id",
-  "in_stock",
-  "is_featured",
-  "is_popular",
-];
+const allowedProductDetailsFilters = ["in_stock"];
 
 const allowedProductFilters = [
   "gender",
@@ -15,6 +9,7 @@ const allowedProductFilters = [
   "sizes",
   "priceStart",
   "priceEnd",
+  "colors",
 ];
 
 const allowedSortColumns = [
@@ -22,6 +17,7 @@ const allowedSortColumns = [
   "product_price_inr",
   "updated_at",
   "is_popular",
+  "is_featured",
 ];
 
 async function findAllProductsByCatagoryId({
@@ -52,6 +48,8 @@ async function findAllProductsByCatagoryId({
       'fk_category_id', p.fk_category_id,
       'description', p.description,
       'products_details_id', pd.product_detail_id,
+      'inStock',pd.in_stock,
+      'is_featured',pd.is_featured,
       'is_wishlisted', 
         IF(EXISTS (
             SELECT 1 FROM wishlist_items wi 
@@ -60,39 +58,39 @@ async function findAllProductsByCatagoryId({
             AND wi.fk_product_id = p.product_id
             AND w.fk_user_id = ?
         ), TRUE, FALSE)
-    ) AS product_details, 
+       ) AS product_details, 
     
-    -- ✅ Select gallery fields
-    JSON_OBJECT(
-      'gallery_id', g.product_img_id,
-      'gallery', g.product_gallrey
-    ) AS gallery_details,
-    
-    -- ✅ Select color fields
-    JSON_OBJECT(
-      'color_id', c.pk_color_id,
-      'color_name', c.color_name,
-      'color_hex', c.color_hex
-    ) AS color_details,
-     
-    -- ✅ Select product sizes
-    JSON_OBJECT(
-      'size_name', s.size_name,
-      'pkSizeId',s.pk_size_id
-    ) AS size_details
+        -- ✅ Select gallery fields
+        JSON_OBJECT(
+          'gallery_id', g.product_img_id,
+          'gallery', g.product_gallrey
+        ) AS gallery_details,
+        
+        -- ✅ Select color fields
+        JSON_OBJECT(
+          'color_id', c.pk_color_id,
+          'color_name', c.color_name,
+          'color_hex', c.color_hex
+        ) AS color_details,
+        
+        -- ✅ Select product sizes
+        JSON_OBJECT(
+          'size_name', s.size_name,
+          'pkSizeId',s.pk_size_id
+        ) AS size_details
 
-    FROM 
-      products_details pd
-    JOIN 
-      products p ON pd.fk_product_id = p.product_id
-    LEFT JOIN 
-      sizes s ON pd.fk_size_id = s.pk_size_id  
-    LEFT JOIN 
-      product_gallarey g ON pd.fk_gallery_id = g.product_img_id
-    LEFT JOIN 
-      product_colors c ON pd.fk_color_id = c.pk_color_id   
-    WHERE 1=1
-    `;
+        FROM 
+          products_details pd
+        JOIN 
+          products p ON pd.fk_product_id = p.product_id
+        LEFT JOIN 
+          sizes s ON pd.fk_size_id = s.pk_size_id  
+        LEFT JOIN 
+          product_gallarey g ON pd.fk_gallery_id = g.product_img_id
+        LEFT JOIN 
+          product_colors c ON pd.fk_color_id = c.pk_color_id   
+        WHERE 1=1
+        `;
 
     // ✅ Query Parameters (First placeholder is for wishlist check)
     const replacements = [userId];
@@ -108,7 +106,9 @@ async function findAllProductsByCatagoryId({
     // ✅ Apply Dynamic productFilters (Filtering on products)
     Object.keys(productFilters).forEach((key) => {
       if (allowedProductFilters.includes(key)) {
-        console.log(`Applying filter -> Key: ${key}, Value: ${productFilters[key]}`);
+        console.log(
+          `Applying filter -> Key: ${key}, Value: ${productFilters[key]}`
+        );
 
         // ✅ Handle price range filtering
         if (key === "priceStart" && productFilters.priceEnd) {
@@ -117,8 +117,12 @@ async function findAllProductsByCatagoryId({
         }
         // ✅ Handle size filtering properly
         else if (key === "sizes") {
-          console.log("sizes arr " ,productFilters[key] )
+          console.log("sizes arr ", productFilters[key]);
           query += ` AND pd.fk_size_id IN (?)`;
+          replacements.push(productFilters[key]);
+        } else if (key === "colors") {
+          console.log("colors arr ", productFilters[key]);
+          query += ` AND pd.fk_color_id IN (?)`;
           replacements.push(productFilters[key]);
         }
         // ✅ Handle other general filters
@@ -134,12 +138,22 @@ async function findAllProductsByCatagoryId({
       query += ` AND pd.is_default_product = 1 `;
     }
 
+    // ✅ SOFT delete IMPL
+    query += " AND  pd.is_deleted = 0";
+
+    query += " ORDER BY pd.in_stock DESC , ";
+
     // ✅ Apply Sorting (Only if it's a valid column)
     if (allowedSortColumns.includes(sortBy)) {
-      query += ` ORDER BY pd.${sortBy} ${sortOrder.toUpperCase() === "DESC" ? "DESC" : "ASC"}`;
+      console.log("sortBy", sortBy);
+      query += ` pd.${sortBy} ${
+        sortOrder.toUpperCase() === "DESC" ? "DESC" : "ASC"
+      } `;
     } else {
-      query += " ORDER BY pd.created_at DESC"; // Default sorting
+      query += " pd.created_at DESC "; // Default sorting
     }
+
+
 
     // ✅ Optimize Pagination with Index-Based Offset
     const offset = (page - 1) * limit;
@@ -161,68 +175,67 @@ async function findAllProductsByCatagoryId({
   }
 }
 
-async function findProductsByPdId({ productsDetailsId,product_id }) {
-try{  console.log("productsDetailsId", productsDetailsId);
-  const replacements = [];
-  let query = `
-SELECT 
-JSON_OBJECT(
-  'product_id', p.product_id,
-  'product_price_inr', pd.product_price_inr,
-  'product_name', p.product_name,
-  'gender', p.gender,
-  'is_enabled', p.is_enabled,
-  'fk_category_id', p.fk_category_id,
-  'description', p.description
-) AS product_details, 
+async function findProductsByPdId({ productsDetailsId, product_id }) {
+  try {
+    console.log("productsDetailsId", productsDetailsId);
+    const replacements = [];
+    let query = `
+        SELECT 
+        JSON_OBJECT(
+          'product_id', p.product_id,
+          'product_price_inr', pd.product_price_inr,
+          'product_name', p.product_name,
+          'gender', p.gender,
+          'is_enabled', p.is_enabled,
+          'fk_category_id', p.fk_category_id,
+          'description', p.description
+        ) AS product_details, 
 
--- Select gallery fields
-JSON_OBJECT(
-  'gallery_id', g.product_img_id,
-  'image_url', g.product_gallrey
-) AS gallery_details,
+        -- Select gallery fields
+        JSON_OBJECT(
+          'gallery_id', g.product_img_id,
+          'image_url', g.product_gallrey
+        ) AS gallery_details,
 
--- Select color fields
-JSON_OBJECT(
-  'color_id', c.pk_color_id,
-  'color_name', c.color_name,
-  'color_hex', c.color_hex
-) AS color_details,
- 
--- Select product sizes
-JSON_OBJECT(
-  'size_name', s.size_name
-) AS size_details
+        -- Select color fields
+        JSON_OBJECT(
+          'color_id', c.pk_color_id,
+          'color_name', c.color_name,
+          'color_hex', c.color_hex
+        ) AS color_details,
+        
+        -- Select product sizes
+        JSON_OBJECT(
+          'size_name', s.size_name
+        ) AS size_details
 
-FROM 
-  products_details pd
-JOIN 
-  products p ON pd.fk_product_id = p.product_id
-LEFT JOIN 
-  sizes s ON pd.fk_size_id = s.pk_size_id  
-LEFT JOIN 
-  product_gallarey g ON pd.fk_gallery_id = g.product_img_id
-LEFT JOIN 
-  product_colors c ON pd.fk_color_id = c.pk_color_id
-WHERE 1=1
-`;
+        FROM 
+          products_details pd
+        JOIN 
+          products p ON pd.fk_product_id = p.product_id
+        LEFT JOIN 
+          sizes s ON pd.fk_size_id = s.pk_size_id  
+        LEFT JOIN 
+          product_gallarey g ON pd.fk_gallery_id = g.product_img_id
+        LEFT JOIN 
+          product_colors c ON pd.fk_color_id = c.pk_color_id
+        WHERE 1=1
+        `;
 
-  if (productsDetailsId!=undefined && productsDetailsId !=null) {
-    query += " AND pd.product_detail_id = ?";
-    replacements.push(productsDetailsId);
+    if (productsDetailsId != undefined && productsDetailsId != null) {
+      query += " AND pd.product_detail_id = ?";
+      replacements.push(productsDetailsId);
+    }
+    if (product_id != undefined && product_id != null) {
+      query += " AND p.product_id = ?";
+      replacements.push(product_id);
+    }
+
+    const [results] = await sequelize.query(query, { replacements });
+    console.log(`Fetched ${results}`);
+    return results;
+  } catch (error) {
+    console.error(error);
   }
-  if (product_id!=undefined && product_id !=null) {
-    query += " AND p.product_id = ?";
-    replacements.push(product_id);
-  }
-
-  
-  const [results] = await sequelize.query(query, { replacements });
-  console.log(`Fetched ${results}`);
-  return results;
-}
-catch(error){
-console.error(error)
-}
 }
 module.exports = { findAllProductsByCatagoryId, findProductsByPdId };
