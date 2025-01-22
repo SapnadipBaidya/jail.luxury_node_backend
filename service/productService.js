@@ -188,7 +188,8 @@ async function findProductsByPdId({ productsDetailsId, product_id }) {
           'gender', p.gender,
           'is_enabled', p.is_enabled,
           'fk_category_id', p.fk_category_id,
-          'description', p.description
+          'description', p.description,
+          'is_default_product',pd.is_default_product
         ) AS product_details, 
 
         -- Select gallery fields
