@@ -11,6 +11,7 @@ router.post("/getSizeFilterByCatagory", async (req, res) => {
 
 router.get("/getAllColors", async (req, res) => {
   // find all categories including its associated Product
+  console.log("get call colors")
   const data = await filterController.getAllColors();
   res.send({ status: "success", data });
 });

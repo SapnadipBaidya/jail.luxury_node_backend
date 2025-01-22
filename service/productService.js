@@ -26,7 +26,7 @@ async function findAllProductsByCatagoryId({
   sortBy = "updated_at",
   sortOrder = "DESC",
   page = 1,
-  limit = 9,
+  limit = 12,
   defaultFlag = 0,
   userId = null, // ✅ Added userId to check wishlist status
 }) {
@@ -105,7 +105,7 @@ async function findAllProductsByCatagoryId({
 
     // ✅ Apply Dynamic productFilters (Filtering on products)
     Object.keys(productFilters).forEach((key) => {
-      if (allowedProductFilters.includes(key)) {
+      if (allowedProductFilters.includes(key) && (productFilters[key] !=[] && productFilters[key]!="" && productFilters[key]!=null && productFilters[key]!=undefined )) {
         console.log(
           `Applying filter -> Key: ${key}, Value: ${productFilters[key]}`
         );
