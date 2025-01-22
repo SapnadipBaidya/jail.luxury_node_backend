@@ -207,7 +207,8 @@ async function findProductsByPdId({ productsDetailsId, product_id }) {
         
         -- Select product sizes
         JSON_OBJECT(
-          'size_name', s.size_name
+          'size_name', s.size_name,
+          'pkSizeId',s.pk_size_id
         ) AS size_details
 
         FROM 
