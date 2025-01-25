@@ -156,9 +156,8 @@ async function fetchUserCart({ userId }) {
   try {
     console.log("userId", userId);
     const replacements = [];
-    let query = ` SELECT 
-   p.product_id , 
-   JSON_OBJECT(
+    let query = ` SELECT p.product_id , 
+    JSON_OBJECT(
       'product_id', p.product_id,
       'product_price_inr', pd.product_price_inr,
       'product_name', p.product_name,
@@ -166,18 +165,27 @@ async function fetchUserCart({ userId }) {
     ) AS product_details,
      JSON_OBJECT(
      'gallery',g.product_gallrey
-     ) AS gallery_details
-    FROM 
+     ) AS gallery_details,
+     JSON_OBJECT(
+     'itemPrice',ci.item_price,
+     'quantity',ci.quantity
+     ) AS cart_details,
+     JSON_OBJECT(
+     'size_name', s.size_name,
+     'pkSizeId',s.pk_size_id
+     ) AS size_details
+     FROM 
       cart_items ci 
-    JOIN 
+     JOIN 
       products p ON p.product_id = ci.fk_product_id
     left JOIN 
       products_details pd ON pd.product_detail_id = ci.fk_product_details_id   
     LEFT JOIN 
-      product_gallarey g ON pd.fk_gallery_id = g.product_img_id   
+      product_gallarey g ON pd.fk_gallery_id = g.product_img_id  
+    LEFT JOIN 
+      sizes s ON pd.fk_size_id = s.pk_size_id  
     LEFT JOIN 
       carts c ON c.cart_id  = ci.fk_cart_id
-    
     WHERE 1=1
     `;
 
