@@ -105,7 +105,13 @@ async function findAllProductsByCatagoryId({
 
     // ✅ Apply Dynamic productFilters (Filtering on products)
     Object.keys(productFilters).forEach((key) => {
-      if (allowedProductFilters.includes(key) && (productFilters[key] !=[] && productFilters[key]!="" && productFilters[key]!=null && productFilters[key]!=undefined )) {
+      if (
+        allowedProductFilters.includes(key) &&
+        productFilters[key] != [] &&
+        productFilters[key] != "" &&
+        productFilters[key] != null &&
+        productFilters[key] != undefined
+      ) {
         console.log(
           `Applying filter -> Key: ${key}, Value: ${productFilters[key]}`
         );
@@ -152,8 +158,6 @@ async function findAllProductsByCatagoryId({
     } else {
       query += " pd.created_at DESC "; // Default sorting
     }
-
-
 
     // ✅ Optimize Pagination with Index-Based Offset
     const offset = (page - 1) * limit;
@@ -242,11 +246,66 @@ async function findProductsByPdId({ productsDetailsId, product_id }) {
   }
 }
 
-async function findAllAvalibaleColorsByPidAndSizeId(){
+async function findAllAvalibaleColorsByPidAndSizeId({ productId, fkSizeId }) {
+  try {
+    const replacements = [];
+    let query = `
+      SELECT DISTINCT fk_color_id 
+      FROM products_details pd 
+      WHERE pd.in_stock = 1 
+        AND pd.quantity > 0 
+    `;
 
+    if (productId != null) { // ✅ Covers both undefined & null
+      query += " AND pd.fk_product_id = ? ";
+      replacements.push(productId);
+    }
+
+    if (fkSizeId != null) {
+      query += " AND pd.fk_size_id = ? ";
+      replacements.push(fkSizeId);
+    }
+
+    console.log("Executing Query:", query, "Replacements:", replacements);
+
+    const [results] = await sequelize.query(query, { replacements });
+    
+    return results;
+  } catch (error) {
+    console.error("❌ Error in findAllAvailableColorsByPidAndSizeId:", error);
+    throw error; // ✅ Ensures error is propagated for proper handling
+  }
 }
 
-async function findAllAvalibaleSizesByPidAndColorId(){
-  
+
+async function findAllAvalibaleSizesByPidAndColorId({ productId, fkColorId }) {
+  try {
+    const replacements = [];
+    let query = `
+      SELECT DISTINCT fk_size_id 
+      FROM products_details pd 
+      WHERE pd.quantity > 0 
+    `;
+
+    if (productId != null) { // ✅ More concise check
+      query += " AND pd.fk_product_id = ? ";
+      replacements.push(productId);
+    }
+
+    if (fkColorId != null) {
+      query += " AND pd.fk_color_id = ? ";
+      replacements.push(fkColorId);
+    }
+
+    console.log("Executing Query:", query, "Replacements:", replacements);
+
+    const [results] = await sequelize.query(query, { replacements });
+
+    return results;
+  } catch (error) {
+    console.error("❌ Error in findAllAvailableSizesByPidAndColorId:", error);
+    throw error; // ✅ Ensures proper error handling
+  }
 }
-module.exports = { findAllProductsByCatagoryId, findProductsByPdId };
+
+module.exports = { findAllProductsByCatagoryId, findProductsByPdId , findAllAvalibaleColorsByPidAndSizeId , findAllAvalibaleSizesByPidAndColorId };
