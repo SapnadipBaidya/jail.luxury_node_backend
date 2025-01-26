@@ -99,7 +99,7 @@ async function fetchUserWishlist({ userId }) {
    p.product_id , 
    JSON_OBJECT(
       'product_id', p.product_id,
-      'product_price_inr', pd.product_price_inr,
+      'product_price_inr', p.product_price_local,
       'product_name', p.product_name,
       'products_details_id',pd.product_detail_id
     ) AS product_details,

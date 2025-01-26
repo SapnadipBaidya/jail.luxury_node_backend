@@ -41,7 +41,7 @@ async function findAllProductsByCatagoryId({
     SELECT 
     JSON_OBJECT(
       'product_id', p.product_id,
-      'product_price_inr', pd.product_price_inr,
+      'product_price_inr', p.product_price_local,
       'product_name', p.product_name,
       'gender', p.gender,
       'is_enabled', p.is_enabled,
@@ -118,7 +118,7 @@ async function findAllProductsByCatagoryId({
 
         // ✅ Handle price range filtering
         if (key === "priceStart" && productFilters.priceEnd) {
-          query += ` AND pd.product_price_inr BETWEEN ? AND ?`;
+          query += ` AND p.product_price_local BETWEEN ? AND ?`;
           replacements.push(productFilters.priceStart, productFilters.priceEnd);
         }
         // ✅ Handle size filtering properly
@@ -179,22 +179,36 @@ async function findAllProductsByCatagoryId({
   }
 }
 
-async function findProductsByPdId({ productsDetailsId, product_id }) {
+async function findProductsByPdId({ productsDetailsId, product_id,userId }) {
   try {
     console.log("productsDetailsId", productsDetailsId);
     const replacements = [];
+    let getWishlist = "";
+    if (userId!=undefined & userId != null) {
+     getWishlist += `'is_wishlisted', 
+        IF(EXISTS (
+            SELECT 1 FROM wishlist_items wi 
+            JOIN wishlist w ON wi.fk_wishlist_id = w.wishlist_id 
+            WHERE wi.fk_products_details_id = pd.product_detail_id 
+            AND wi.fk_product_id = p.product_id
+            AND w.fk_user_id = ?
+        ), TRUE, FALSE)`
+        replacements.push(userId)
+    }
+  
     let query = `
         SELECT 
         JSON_OBJECT(
           'product_id', p.product_id,
           'productDetailsId',pd.product_detail_id,
-          'product_price_inr', pd.product_price_inr,
+          'product_price_inr', p.product_price_local,
           'product_name', p.product_name,
           'gender', p.gender,
           'is_enabled', p.is_enabled,
           'fk_category_id', p.fk_category_id,
           'description', p.description,
-          'is_default_product',pd.is_default_product
+          'is_default_product',pd.is_default_product,
+          ${getWishlist}
         ) AS product_details, 
 
         -- Select gallery fields

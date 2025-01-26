@@ -49,7 +49,7 @@ async function findProductsByPdId(FilterObj) {
 
     const processedData = {
         allSizesIdOfProduct: sortedSizes,
-        allColorsIdOfProduct: sortedColors,
+        allColorsIdOfProduct: sortedColors
     };
 
     console.log("✅ Processed Data:", processedData);
