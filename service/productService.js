@@ -179,15 +179,17 @@ async function findAllProductsByCatagoryId({
   }
 }
 
-async function findProductsByPdId({ productsDetailsId, product_id }) {
+async function findProductsByPdId({ productDetailId, product_id }) {
   try {
-    console.log("productsDetailsId", productsDetailsId);
+    console.log("productDetailId", productDetailId);
     const replacements = [];
 
     let query = `
       SELECT 
         JSON_OBJECT(
           'productDetailsId', pd.product_detail_id,
+          'defaultProductColorId', pd.fk_color_id,
+          'defaultProductSizeId', pd.fk_size_id,
           'price', p.product_price_local,
           'description', p.description,
           'moreDetails', p.more_details,
@@ -229,10 +231,15 @@ async function findProductsByPdId({ productsDetailsId, product_id }) {
     `;
 
     if (product_id !== undefined && product_id !== null) {
-      query += " AND p.product_id = ? LIMIT 1;";
+      query += " AND p.product_id = ?";
       replacements.push(product_id);
     }
 
+    if (productDetailId !== undefined && productDetailId !== null) {
+      query += " AND pd.product_detail_id = ?";
+      replacements.push(productDetailId);
+    }
+    
     // Execute the query with replacements
     const [results] = await sequelize.query(query, { replacements });
 
