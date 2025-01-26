@@ -183,6 +183,7 @@ async function findProductsByPdId({ productsDetailsId, product_id }) {
         SELECT 
         JSON_OBJECT(
           'product_id', p.product_id,
+          'productDetailsId',pd.product_detail_id,
           'product_price_inr', pd.product_price_inr,
           'product_name', p.product_name,
           'gender', p.gender,
@@ -239,5 +240,13 @@ async function findProductsByPdId({ productsDetailsId, product_id }) {
   } catch (error) {
     console.error(error);
   }
+}
+
+async function findAllAvalibaleColorsByPidAndSizeId(){
+
+}
+
+async function findAllAvalibaleSizesByPidAndColorId(){
+  
 }
 module.exports = { findAllProductsByCatagoryId, findProductsByPdId };

@@ -16,8 +16,8 @@ router.post("/findProductsByPdId", async (req, res) => {
   console.log(req.body)
   const { payloadObj } = req.body;
   console.log("payloadObj is :: " + payloadObj);
-  const data = await prouductController.findProductsByPdId(payloadObj);
-  res.send({ status: "success", data });
+  const responseData = await prouductController.findProductsByPdId(payloadObj);
+  res.send({ status: "success", responseData });
 });
 
 
