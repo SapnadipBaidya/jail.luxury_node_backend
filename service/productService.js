@@ -29,6 +29,7 @@ async function findAllProductsByCatagoryId({
   limit = 12,
   defaultFlag = 0,
   userId = null, // ✅ Added userId to check wishlist status
+  isFilterEnabled = false
 }) {
   try {
     console.log(`Fetching products with filters:
@@ -50,6 +51,7 @@ async function findAllProductsByCatagoryId({
       'products_details_id', pd.product_detail_id,
       'inStock',pd.in_stock,
       'is_featured',pd.is_featured,
+      'is_default_product',pd.is_default_product,
       'is_wishlisted', 
         IF(EXISTS (
             SELECT 1 FROM wishlist_items wi 
@@ -140,9 +142,7 @@ async function findAllProductsByCatagoryId({
     });
 
     // ✅ Fix: Correct condition for defaultFlag
-    if (defaultFlag === 1) {
-      query += ` AND pd.is_default_product = 1 `;
-    }
+    console.log("isFilterEnabled",isFilterEnabled);
 
     // ✅ SOFT delete IMPL
     query += " AND  pd.is_deleted = 0";
@@ -172,6 +172,9 @@ async function findAllProductsByCatagoryId({
     const [results] = await sequelize.query(query, { replacements });
 
     console.log(`Fetched ${results.length} products with applied filters.`);
+    if (defaultFlag === 1) {
+      return results?.filter(item=>item?.product_details?.is_default_product == 1)
+    }
     return results;
   } catch (error) {
     console.error("Error in findAllProductsByCategoryId:", error.message);
