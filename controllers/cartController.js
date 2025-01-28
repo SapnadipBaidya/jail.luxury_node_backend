@@ -1,15 +1,14 @@
-const cartService = require("../service/cartService")
+import * as cartService from "../service/cartService.js";
 
-async function addOrEditCart (FilterObj){
+export async function addOrEditCart (FilterObj){
     console.log("FilterObj",FilterObj)
  return await  cartService.addOrEditCart(FilterObj);
 }
 
-async function fetchUserCart (FilterObj){
+export async function fetchUserCart (FilterObj){
     return await  cartService.fetchUserCart(FilterObj);
    }
-async function  deleteFromUserCart(FilterObj){
+export async function  deleteFromUserCart(FilterObj){
     return await  cartService.deleteFromUserCart(FilterObj);
 }
 
-module.exports = {addOrEditCart,fetchUserCart,deleteFromUserCart};

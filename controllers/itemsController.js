@@ -1,12 +1,11 @@
-const itemsService = require("../service/itemsService")
+import * as itemsService from "../service/itemsService.js";
 
-async function findCatagoryById (catagoryId){
+export async function findCatagoryById (catagoryId){
  return await  itemsService.findCatagoryById(catagoryId);
 }
 
-async function getAllCategories (){
+export async function getAllCategories (){
      return  await itemsService.getAllCategories();
 }
 
 
-module.exports = {findCatagoryById,getAllCategories};

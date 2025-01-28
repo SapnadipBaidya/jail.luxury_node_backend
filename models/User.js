@@ -1,9 +1,11 @@
-const { Model, DataTypes } = require("sequelize");
-const sequelize = require("../config/connection");
+import { DataTypes, Model } from "sequelize";
+import connection from "../config/connection.js";
+
+const sequelize = connection;
 
 class User extends Model {}
 
-User.init(
+ User.init(
   {
     user_id: {
       type: DataTypes.STRING,
@@ -60,4 +62,6 @@ User.init(
   }
 );
 
-module.exports = User;
+
+
+export default User;

@@ -1,8 +1,10 @@
-const sequelize = require("../config/connection");
+import connection from "../config/connection.js";
+
+const sequelize = connection;
 
 
 
-async function getSizeFilterByCatagory(categoryId) {
+export async function getSizeFilterByCatagory(categoryId) {
     try {
       console.log("in itemsService with categoryId:", categoryId);
   
@@ -22,7 +24,7 @@ async function getSizeFilterByCatagory(categoryId) {
   }
 
 
-  async function getAllColors() {
+ export async function getAllColors() {
     try {
       const [results] = await sequelize.query(
         "SELECT * FROM product_colors"
@@ -34,4 +36,3 @@ async function getSizeFilterByCatagory(categoryId) {
       throw error; // Rethrow the error for the caller to handle
     }
   }
-module.exports = {getSizeFilterByCatagory,getAllColors};

@@ -1,8 +1,9 @@
-const sequelize = require("../config/connection");
+import connection from "../config/connection.js";
+const sequelize = connection;
 
 
 
-async function findCatagoryById(categoryId) {
+export async function findCatagoryById(categoryId) {
     try {
       console.log("in itemsService with categoryId:", categoryId);
   
@@ -24,7 +25,7 @@ async function findCatagoryById(categoryId) {
   }
 
 
-  async function getAllCategories() {
+export async function getAllCategories() {
     try {
       const [results] = await sequelize.query(
         "SELECT * FROM product_catagory WHERE id_enabled = :isEnabled",
@@ -39,4 +40,3 @@ async function findCatagoryById(categoryId) {
       throw error; // Rethrow the error for the caller to handle
     }
   }
-module.exports = {findCatagoryById,getAllCategories};

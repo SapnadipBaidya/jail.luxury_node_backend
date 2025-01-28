@@ -1,7 +1,5 @@
-const searchService = require("../service/searchService");
+import * as searchService from "../service/searchService.js"; // Ensure .js extension
 
-async function searchByNameColorCategory(FilterObj) {
+export async function searchByNameColorCategory(FilterObj) {
   return await searchService.searchByNameColorCategory(FilterObj);
 }
-
-module.exports = { searchByNameColorCategory };

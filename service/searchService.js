@@ -1,7 +1,7 @@
-const sequelize = require("../config/connection");
-
+import connection from "../config/connection.js";
+const sequelize = connection;
 // Function to classify user search terms dynamically
-async function classifySearchTerms(userInput) {
+ export async function classifySearchTerms(userInput) {
     const words = userInput.trim().toLowerCase().split(' ');
 
     let colorTerm = '';
@@ -30,7 +30,7 @@ async function classifySearchTerms(userInput) {
 }
 
 // Search API Route
-async function searchByNameColorCategory({userInput}){
+ export async function searchByNameColorCategory({userInput}){
     try {
         const { colorTerm, productTerm, categoryTerm } = await classifySearchTerms(userInput || '');
 
@@ -72,4 +72,4 @@ async function searchByNameColorCategory({userInput}){
     } 
 };
 
-module.exports = {searchByNameColorCategory};
+

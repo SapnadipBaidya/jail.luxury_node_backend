@@ -1,6 +1,8 @@
-const router = require("express").Router();
+import express from "express";
+const router = express.Router();
 
-const filterController = require("../../controllers/filterController");
+
+import * as filterController from "../../controllers/filterController.js";
 router.post("/getSizeFilterByCatagory", async (req, res) => {
   // find all categories including its associated Product
   const { categoryId } = req.body;
@@ -17,4 +19,4 @@ router.get("/getAllColors", async (req, res) => {
 });
 
 // Export
-module.exports = router;
+export default router;

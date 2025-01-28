@@ -1,58 +1,53 @@
-const router = require("express").Router();
+import { Router } from "express";
+import * as productController from "../../controllers/productController.js";
+import * as searchController from "../../controllers/searchController.js";
 
-const  prouductController = require("../../controllers/productController");
-const  searchController = require("../../controllers/searchController");
+const router = Router();
 
 router.post("/findAllProductsByCatagoryId", async (req, res) => {
-  // find all categories including its associated Product
-  console.log(req.body)
+  console.log(req.body);
   const { payloadObj } = req.body;
-  console.log("payloadObj is :: " + payloadObj);
-  const data = await prouductController.findAllProductsByCatagoryId(payloadObj);
+  console.log("payloadObj is ::", payloadObj);
+  const data = await productController.findAllProductsByCatagoryId(payloadObj);
   res.send({ status: "success", data });
 });
 
 router.post("/findProductsByPdId", async (req, res) => {
-  // find all categories including its associated Product
-  console.log(req.body)
+  console.log(req.body);
   const { payloadObj } = req.body;
-  console.log("payloadObj is :: " + payloadObj);
-  const responseData = await prouductController.findProductsByPdId(payloadObj);
+  console.log("payloadObj is ::", payloadObj);
+  const responseData = await productController.findProductsByPdId(payloadObj);
   res.send({ status: "success", responseData });
 });
 
 router.post("/findAllAvalibaleColorsByPidAndSizeId", async (req, res) => {
-  // find all categories including its associated Product
-  console.log(req.body)
+  console.log(req.body);
   const { payloadObj } = req.body;
-  console.log("payloadObj is :: " + payloadObj);
-  const responseData = await prouductController.findAllAvalibaleColorsByPidAndSizeId(payloadObj);
+  console.log("payloadObj is ::", payloadObj);
+  const responseData = await productController.findAllAvalibaleColorsByPidAndSizeId(payloadObj);
   res.send({ status: "success", responseData });
 });
 
 router.post("/findAllAvalibaleSizesByPidAndColorId", async (req, res) => {
-  // find all categories including its associated Product
-  console.log(req.body)
+  console.log(req.body);
   const { payloadObj } = req.body;
-  console.log("payloadObj is :: " + payloadObj);
-  const responseData = await prouductController.findAllAvalibaleSizesByPidAndColorId(payloadObj);
+  console.log("payloadObj is ::", payloadObj);
+  const responseData = await productController.findAllAvalibaleSizesByPidAndColorId(payloadObj);
   res.send({ status: "success", responseData });
 });
 
 router.post("/searchByNameColorCategory", async (req, res) => {
-  // find all categories including its associated Product
-  let data  = {}
+  let data = {};
   try {
-      console.log(req.body)
-      const { payloadObj } = req.body;
-      console.log("payloadObj is :: " + payloadObj);
-      data  = await searchController.searchByNameColorCategory(payloadObj);
+    console.log(req.body);
+    const { payloadObj } = req.body;
+    console.log("payloadObj is ::", payloadObj);
+    data = await searchController.searchByNameColorCategory(payloadObj);
   } catch (error) {
-    console.log(error);
-      data.message = "api failed"
+    console.error(error);
+    data.message = "API failed";
   }
-
   res.send({ status: "success", data });
 });
-// Export
-module.exports = router;
+
+export default router;

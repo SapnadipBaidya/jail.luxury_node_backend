@@ -1,6 +1,7 @@
-const sequelize = require("../config/connection");
+import connection from "../config/connection.js";
 
-async function addOrEditCart({
+const sequelize = connection;
+export async function addOrEditCart({
   userId,
   productsDetailsId,
   product_id,
@@ -119,7 +120,7 @@ async function addOrEditCart({
   }
 }
 
-async function deleteFromUserCart({ userId, productsDetailsId, product_id }) {
+export async function deleteFromUserCart({ userId, productsDetailsId, product_id }) {
   try {
     // Validate input parameters
     if (!productsDetailsId || !product_id) {
@@ -152,7 +153,7 @@ async function deleteFromUserCart({ userId, productsDetailsId, product_id }) {
   }
 }
 
-async function fetchUserCart({ userId }) {
+export async function fetchUserCart({ userId }) {
   try {
     console.log("userId", userId);
     const replacements = [];
@@ -201,4 +202,5 @@ async function fetchUserCart({ userId }) {
     console.error(error);
   }
 }
-module.exports = { addOrEditCart, fetchUserCart, deleteFromUserCart };
+
+

@@ -1,6 +1,9 @@
-const router = require("express").Router();
+import express from "express";
+const router = express.Router();
 
-const  wishlistController = require("../../controllers/wishlistController");
+
+import * as wishlistController from "../../controllers/wishlistController.js";
+
 
 router.post("/addOrEditWishlist", async (req, res) => {
     console.log(req.body)
@@ -32,4 +35,4 @@ router.post("/deleteFromUserWishlist", async (req, res) => {
 
 
 // Export
-module.exports = router;
+export default router;

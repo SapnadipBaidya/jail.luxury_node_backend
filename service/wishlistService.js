@@ -1,5 +1,8 @@
-const sequelize = require("../config/connection");
-async function addOrEditWishlist({ userId, productsDetailsId, product_id }) {
+import connection from "../config/connection.js";
+
+const sequelize = connection;
+
+export async function addOrEditWishlist({ userId, productsDetailsId, product_id }) {
     try {
         // ✅ Validate input parameters
         if (!userId || !productsDetailsId || !product_id) {
@@ -61,7 +64,7 @@ async function addOrEditWishlist({ userId, productsDetailsId, product_id }) {
     }
 }
 
-async function deleteFromUserWishlist({ userId,productsDetailsId, product_id }) {
+export async function deleteFromUserWishlist({ userId,productsDetailsId, product_id }) {
     try {
         // Validate input parameters
         if (!productsDetailsId || !product_id) {
@@ -91,7 +94,7 @@ async function deleteFromUserWishlist({ userId,productsDetailsId, product_id }) 
 }
 
 
-async function fetchUserWishlist({ userId }) {
+export async function fetchUserWishlist({ userId }) {
   try {
     console.log("userId", userId);
     const replacements = [];
@@ -132,4 +135,4 @@ async function fetchUserWishlist({ userId }) {
     console.error(error);
   }
 }
-module.exports = { addOrEditWishlist, fetchUserWishlist,deleteFromUserWishlist };
+

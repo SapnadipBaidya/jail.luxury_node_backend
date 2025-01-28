@@ -1,4 +1,5 @@
-const sequelize = require("../config/connection");
+import connection from "../config/connection.js";
+const sequelize = connection;
 
 // Allowed columns for filtering & sorting to prevent SQL injection
 const allowedProductDetailsFilters = ["in_stock"];
@@ -20,7 +21,7 @@ const allowedSortColumns = [
   "is_featured",
 ];
 
-async function findAllProductsByCatagoryId({
+export async function findAllProductsByCatagoryId({
   productDetailsFilters = {},
   productFilters = {},
   sortBy = "updated_at",
@@ -182,7 +183,7 @@ async function findAllProductsByCatagoryId({
   }
 }
 
-async function findProductsByPdId({ productDetailId, product_id }) {
+export async function findProductsByPdId({ productDetailId, product_id }) {
   try {
     console.log("productDetailId", productDetailId);
     const replacements = [];
@@ -265,7 +266,7 @@ async function findProductsByPdId({ productDetailId, product_id }) {
 
 
 
-async function findAllAvalibaleColorsByPidAndSizeId({ productId, fkSizeId }) {
+export async function findAllAvalibaleColorsByPidAndSizeId({ productId, fkSizeId }) {
   try {
     const replacements = [];
     let query = `
@@ -297,7 +298,7 @@ async function findAllAvalibaleColorsByPidAndSizeId({ productId, fkSizeId }) {
 }
 
 
-async function findAllAvalibaleSizesByPidAndColorId({ productId, fkColorId }) {
+export async function findAllAvalibaleSizesByPidAndColorId({ productId, fkColorId }) {
   try {
     const replacements = [];
     let query = `
@@ -327,4 +328,5 @@ async function findAllAvalibaleSizesByPidAndColorId({ productId, fkColorId }) {
   }
 }
 
-module.exports = { findAllProductsByCatagoryId, findProductsByPdId , findAllAvalibaleColorsByPidAndSizeId , findAllAvalibaleSizesByPidAndColorId };
+
+

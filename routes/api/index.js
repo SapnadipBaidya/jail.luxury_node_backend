@@ -1,15 +1,18 @@
 // Import
-const router = require("express").Router();
-const itemsCategory =require("./itemsCategory");
-const productCategory =  require("./products.js");
-const wishlist = require("./wishlist.js")
-const filters = require("./filters.js")
-const cart = require("./cart.js")
+import express from "express";
+import itemsCategory from "./itemsCategory.js";
+import productCategory from "./products.js";
+import wishlist from "./wishlist.js";
+import filters from "./filters.js";
+import cart from "./cart.js";
+
+const router = express.Router();
 
 router.use("/items", itemsCategory);
 router.use("/products", productCategory);
 router.use("/wishlist", wishlist);
 router.use("/filters", filters);
 router.use("/cart", cart);
+
 // Export
-module.exports = router;
+export default router;

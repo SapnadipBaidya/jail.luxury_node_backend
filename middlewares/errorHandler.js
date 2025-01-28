@@ -1,5 +1,5 @@
 // Custom Error Class
-class AppError extends Error {
+export class AppError extends Error {
     constructor(message, statusCode) {
       super(message);
       this.statusCode = statusCode || 500; // Default to 500 (Internal Server Error)
@@ -9,7 +9,7 @@ class AppError extends Error {
   }
   
   // Global Error Handler Middleware
-  const globalErrorHandler = (err, req, res, next) => {
+  export const globalErrorHandler = (err, req, res, next) => {
     console.error("Global Error Handler: ", err); // Log error for debugging
   
     // Default status code and message
@@ -25,4 +25,4 @@ class AppError extends Error {
     });
   };
   
-  module.exports = { AppError, globalErrorHandler };
+  

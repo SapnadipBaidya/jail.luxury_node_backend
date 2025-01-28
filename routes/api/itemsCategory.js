@@ -1,7 +1,10 @@
-const router = require("express").Router();
-const itemsController = require("../../controllers/itemsController");
+import express from "express";
+import * as itemsController from "../../controllers/itemsController.js";
+
+const router = express.Router();
+
 router.get("/findCatagoryById", async (req, res) => {
-  // find all categories including its associated Product
+  // Find category by ID including its associated Product
   const { catagoryId } = req.query;
   console.log("catagoryId is :: " + catagoryId);
   const data = await itemsController.findCatagoryById(catagoryId);
@@ -9,10 +12,10 @@ router.get("/findCatagoryById", async (req, res) => {
 });
 
 router.get("/getAllCategories", async (req, res) => {
-  // find all categories including its associated Product
+  // Find all categories including their associated Products
   const data = await itemsController.getAllCategories();
   res.send({ status: "success", data });
 });
 
 // Export
-module.exports = router;
+export default router;
