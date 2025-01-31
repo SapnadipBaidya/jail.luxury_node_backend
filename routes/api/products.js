@@ -145,10 +145,10 @@ router.get("/searchByNameColorCategory", async (req, res) => {
     }
 
     // Success response
-    res.send({ status: "success", data });
+    res.status(200).send(data);
   } catch (error) {
     console.error("Error in /searchByNameColorCategory:", error, {
-      categoryName,
+      userInput,
     });
 
     // Error response
@@ -157,6 +157,7 @@ router.get("/searchByNameColorCategory", async (req, res) => {
       message: "An error occurred while processing your request.",
     });
   }
-});
+  }
+);
 
 export default router;
