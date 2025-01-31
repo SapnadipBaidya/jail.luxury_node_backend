@@ -4,24 +4,39 @@ const sequelize = connection;
 
 
 
-export async function getSizeFilterByCatagory(categoryId) {
-    try {
-      console.log("in itemsService with categoryId:", categoryId);
-  
-      // Execute the query
+export async function getSizeFilterByCategory(categoryName) {
+  try {
+      // Validate input
+      if (!categoryName || typeof categoryName !== "string") {
+          throw new Error("Invalid category name provided.");
+      }
+
+      console.log("Fetching sizes for category:", categoryName);
+
+      // Execute the query safely using placeholders
       const [results] = await sequelize.query(
-        "SELECT * FROM sizes WHERE fk_category_id = ?", // Use placeholders
-        {
-          replacements: [categoryId],
-        }
+          `SELECT * 
+           FROM sizes 
+           WHERE fk_category_id = (
+               SELECT catagory_id  
+               FROM product_catagory 
+               WHERE catagory_name = ?
+           )`,
+          { replacements: [categoryName] }
       );
-  
+
+      // Ensure results exist before returning
+      if (!results || results.length === 0) {
+          console.warn(`No sizes found for category: ${categoryName}`);
+          return []; // Return an empty array if no sizes are found
+      }
+
       return results;
-    } catch (error) {
-      console.error("Error in getSizeFilterByCatagory:", error.message);
-      throw new Error("Failed to fetch getSizeFilterByCatagory. Please try again later."); // Return user-friendly error
-    }
+  } catch (error) {
+      console.error("Error in getSizeFilterByCategory:", error);
+      throw new Error("Failed to fetch size filters. Please try again later.");
   }
+}
 
 
  export async function getAllColors() {

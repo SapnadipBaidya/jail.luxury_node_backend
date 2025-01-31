@@ -10,7 +10,6 @@ import crypto from "crypto";
 import routes from "./routes/index.js";
 import { AppError, globalErrorHandler } from "./middlewares/errorHandler.js";
 import User from "./models/User.js";
-import setTokensCookies from "./utils/setTokensCookies.js";
 import connection from "./config/connection.js";
 import dotenv from "dotenv";
 dotenv.config();

@@ -5,9 +5,9 @@ const router = express.Router();
 import * as filterController from "../../controllers/filterController.js";
 router.post("/getSizeFilterByCatagory", async (req, res) => {
   // find all categories including its associated Product
-  const { categoryId } = req.body;
-  console.log("categoryId is :: " + categoryId);
-  const data = await filterController.getSizeFilterByCatagory(categoryId);
+  const { categoryName } = req.body;
+  console.log("categoryName is :: " + categoryName);
+  const data = await filterController.getSizeFilterByCategory(categoryName);
   res.send({ status: "success", data });
 });
 

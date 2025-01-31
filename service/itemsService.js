@@ -33,7 +33,7 @@ export async function getAllCategories() {
           replacements: { isEnabled: 1 }
         }
       );
-  
+  console.log("results",results)
       return results; // Return the fetched results
     } catch (error) {
       console.error("Error fetching categories:", error.message);

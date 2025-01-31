@@ -5,7 +5,7 @@ export async function findCatagoryById (catagoryId){
 }
 
 export async function getAllCategories (){
-     return  await itemsService.getAllCategories();
+     return await itemsService.getAllCategories();
 }
 
 

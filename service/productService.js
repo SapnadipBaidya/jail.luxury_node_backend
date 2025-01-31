@@ -262,7 +262,149 @@ export async function findProductsByPdId({ productDetailId, product_id }) {
 }
 
 
+export async function findProductsByCategoryName({
+  categoryName,
+  colorFilter = null,
+  sizeFilter = null,
+  gender = null, // Add gender parameter
+  sortBy = "updated_at",
+  sortOrder = "DESC",
+  page = 1,
+  limit = 12,
+  userId = null, // Optional: For wishlist status
+}) {
+  try {
+    console.log(`Fetching products for category: ${categoryName}`);
 
+    // Base query with dynamic filters
+    let query = `
+      WITH filtered_details AS (
+          SELECT 
+              pd.product_detail_id,
+              pd.is_default_product,
+              pd.fk_color_id,
+              pd.fk_size_id,
+              pd.fk_product_id,
+              pd.fk_gallery_id 
+          FROM products_details pd
+          JOIN products p ON pd.fk_product_id = p.product_id
+          WHERE 
+              -- Color Filter
+              (COALESCE(:colorFilter, NULL) IS NULL OR pd.fk_color_id IN (:colorFilter))
+              AND 
+              -- Size Filter Logic
+              (
+                  -- When size filter is provided
+                  (COALESCE(:sizeFilter, NULL) IS NOT NULL AND pd.fk_size_id IN (:sizeFilter))
+                  OR
+                  -- When size filter is empty (include all sizes)
+                  (COALESCE(:sizeFilter, NULL) IS NULL)
+              )
+              AND
+              -- Gender Filter
+              (COALESCE(:gender, NULL) IS NULL OR p.gender = :gender)
+      ),
+      -- Group by product and color to avoid duplicates while preserving fk_gallery_id
+      unique_product_color AS (
+          SELECT 
+              fk_product_id,
+              fk_color_id,
+              fk_gallery_id,  -- Fix: Include fk_gallery_id explicitly
+              MIN(fk_size_id) AS fk_size_id  -- Ensure one size per product-color combination
+          FROM filtered_details
+          GROUP BY fk_product_id, fk_color_id, fk_gallery_id
+      )
+      SELECT 
+          p.product_name,
+          pd.product_detail_id,
+          pd.is_default_product,
+          pd.fk_color_id,
+          pd.fk_size_id,
+          p.product_id,
+          JSON_OBJECT(
+              'price', p.product_price_local,
+              'description', p.description,
+              'moreDetails', p.more_details,
+              'categoryName', c.catagory_name,
+              'is_wishlisted', 
+                  IF(EXISTS (
+                      SELECT 1 FROM wishlist_items wi 
+                      JOIN wishlist w ON wi.fk_wishlist_id = w.wishlist_id 
+                      WHERE wi.fk_products_details_id = pd.product_detail_id 
+                      AND wi.fk_product_id = p.product_id
+                      AND w.fk_user_id = :userId
+                  ), TRUE, FALSE),
+              'gallery', CAST(IFNULL(pg.product_gallrey, '[]') AS JSON) -- Fetch gallery images as JSON
+          ) AS product_data
+      FROM unique_product_color upc
+      JOIN products_details pd 
+          ON pd.fk_product_id = upc.fk_product_id
+          AND pd.fk_color_id = upc.fk_color_id
+          AND pd.fk_size_id = upc.fk_size_id
+      LEFT JOIN products p ON p.product_id = pd.fk_product_id
+      INNER JOIN product_catagory c 
+          ON p.fk_category_id = c.catagory_id 
+          AND c.category_mapping = :categoryName
+      LEFT JOIN (
+          SELECT 
+              fd.fk_product_id,
+              JSON_ARRAYAGG(
+                  JSON_OBJECT(
+                      'color_hex', clr.color_hex,
+                      'color_id', clr.pk_color_id,
+                      'color_name', clr.color_name
+                  )
+              ) AS colors
+          FROM filtered_details fd
+          JOIN product_colors clr ON clr.pk_color_id = fd.fk_color_id
+          GROUP BY fd.fk_product_id
+      ) color_data ON color_data.fk_product_id = p.product_id
+      LEFT JOIN product_gallarey pg 
+          ON pg.product_img_id = upc.fk_gallery_id
+    `;
+  console.log("gender is ",gender)
+    // Query Parameters
+    const replacements = {
+      colorFilter: colorFilter,
+      sizeFilter: sizeFilter,
+      categoryName: categoryName,
+      userId: userId,
+      gender: gender, // Add gender to replacements
+    };
+
+    // Sorting Logic
+    if (["updated_at", "created_at"].includes(sortBy)) {
+      query += ` ORDER BY pd.${sortBy} ${
+        sortOrder.toUpperCase() === "DESC" ? "DESC" : "ASC"
+      }`;
+    } else if (["product_price_local"].includes(sortBy)) {
+      query += ` ORDER BY p.${sortBy} ${
+        sortOrder.toUpperCase() === "DESC" ? "DESC" : "ASC"
+      }`;
+    } else {
+      query += " ORDER BY pd.created_at DESC"; // Default sorting
+    }
+
+    // Apply Pagination
+    const offset = (page - 1) * limit;
+    query += " LIMIT :limit OFFSET :offset";
+    replacements.limit = parseInt(limit);
+    replacements.offset = parseInt(offset);
+
+    // Log final query before execution
+    console.log(`Final Query: ${query}`);
+    console.log(`Replacements: ${JSON.stringify(replacements)}`);
+
+    // Execute Query
+    const [results] = await sequelize.query(query, { replacements });
+
+    console.log(`Fetched ${results.length} products for category: ${categoryName}`);
+    return results;
+  } catch (error) {
+    console.error("Error in findProductsByCategoryName:", error.message);
+    throw new Error("Failed to fetch products. Please try again later.");
+  }
+}
 
 
 
