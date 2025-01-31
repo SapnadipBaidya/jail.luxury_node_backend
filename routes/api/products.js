@@ -116,18 +116,47 @@ router.post("/findAllAvalibaleSizesByPidAndColorId", async (req, res) => {
   res.send({ status: "success", responseData });
 });
 
-router.post("/searchByNameColorCategory", async (req, res) => {
-  let data = {};
-  try {
-    console.log(req.body);
-    const { payloadObj } = req.body;
-    console.log("payloadObj is ::", payloadObj);
-    data = await searchController.searchByNameColorCategory(payloadObj);
-  } catch (error) {
-    console.error(error);
-    data.message = "API failed";
+router.get("/searchByNameColorCategory", async (req, res) => {
+  const { userInput,page=1,limit=12 } = req.query;
+
+  // Edge Case: Handle missing or invalid categoryName
+  if (!userInput || typeof userInput !== "string" || userInput.trim() === "") {
+    return res.status(400).send({
+      status: "error",
+      message: "Invalid or missing categoryName parameter.",
+    });
   }
-  res.send({ status: "success", data });
+
+  try {
+    console.log("userInput:", userInput);
+
+    // Call the search function with userInput
+    const data = await searchController.searchByNameColorCategory({
+      userInput: userInput,page,limit
+    });
+
+    // Edge Case: Handle no results found
+    if (data.length === 0 || data === "Nothing Found") {
+      return res.status(404).send({
+        status: "success",
+        message: "No products found for the given category.",
+        data: [],
+      });
+    }
+
+    // Success response
+    res.send({ status: "success", data });
+  } catch (error) {
+    console.error("Error in /searchByNameColorCategory:", error, {
+      categoryName,
+    });
+
+    // Error response
+    res.status(500).send({
+      status: "error",
+      message: "An error occurred while processing your request.",
+    });
+  }
 });
 
 export default router;

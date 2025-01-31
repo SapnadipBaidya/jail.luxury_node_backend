@@ -30,46 +30,84 @@ const sequelize = connection;
 }
 
 // Search API Route
- export async function searchByNameColorCategory({userInput}){
+export async function searchByNameColorCategory({ userInput, page, limit }) {
     try {
+        // Validate page and limit
+        page = parseInt(page) || 1;
+        limit = parseInt(limit) || 10;
+
+        if (page < 1 || limit < 1) {
+            throw new Error("Invalid page or limit. Both must be positive integers.");
+        }
+
+        // Classify search terms
         const { colorTerm, productTerm, categoryTerm } = await classifySearchTerms(userInput || '');
 
-        const sqlQuery = `
+        // Base query
+        let query = `
             SELECT 
-                p.product_id, 
-                p.product_name, 
-                p.description, 
-                pc.catagory_name, 
-                col.color_name, 
-                col.color_hex, 
-                MAX(pd.quantity) AS quantity,  
-                MAX(pd.in_stock) AS in_stock,  
-                p.product_price_local, 
-                p.product_price_global, 
-                p.local_currency, 
-                p.global_currency
+            pd.product_detail_id, 
+            p.product_name, 
+            pd.fk_color_id,
+            pd.fk_size_id,
+            p.product_id,
+            JSON_OBJECT(
+                "price", p.product_price_local,
+                "description", p.description,
+                "moreDetails", p.more_details,
+                "gallery", pg.product_gallrey
+            ) AS product_data
             FROM products p
             JOIN product_catagory pc ON p.fk_category_id = pc.catagory_id
             JOIN products_details pd ON p.product_id = pd.fk_product_id
+            JOIN product_gallarey pg ON pg.product_img_id = pd.fk_gallery_id
             JOIN product_colors col ON pd.fk_color_id = col.pk_color_id
             WHERE 
                 p.product_name LIKE CONCAT('%', :productTerm, '%') 
                 AND col.color_name LIKE CONCAT('%', :colorTerm, '%') 
                 AND pc.catagory_name LIKE CONCAT('%', :categoryTerm, '%') 
-            GROUP BY p.product_id, col.color_name, pc.catagory_name, p.product_name, p.description, 
-                    col.color_hex, p.product_price_local, p.product_price_global, 
-                    p.local_currency, p.global_currency
-            ORDER BY p.product_name;
+            GROUP BY 
+                pd.product_detail_id, 
+                p.product_name, 
+                pd.fk_color_id,
+                pd.fk_size_id,
+                p.product_id, 
+                p.product_price_local, 
+                p.description, 
+                p.more_details,
+                pg.product_gallrey
+            ORDER BY p.product_name
         `;
 
-        const [results] = await sequelize.query(sqlQuery, {
-            replacements: { productTerm, colorTerm, categoryTerm }
-        });
-        return results?.length > 0 ? results : "Nothing Found"
+        // Add pagination
+        const offset = (page - 1) * limit;
+        query += " LIMIT :limit OFFSET :offset";
+
+        // Define replacements
+        const replacements = {
+            productTerm,
+            colorTerm,
+            categoryTerm,
+            limit,
+            offset,
+        };
+
+        // Execute query
+        const [results] = await sequelize.query(query, { replacements });
+        console.log("results:", results);
+
+        // Return results or empty array if nothing is found
+        return results.length > 0 ? results : [];
     } catch (error) {
-        console.error('Error:', error);
-        return []
-    } 
-};
+        console.error('Error in searchByNameColorCategory:', error, {
+            userInput,
+            page,
+            limit,
+        });
+        return [];
+    }
+}
+
+
 
 
