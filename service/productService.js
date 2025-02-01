@@ -183,83 +183,93 @@ export async function findAllProductsByCatagoryId({
   }
 }
 
-export async function findProductsByPdId({ productDetailId, product_id }) {
+export async function findProductsByPdId({ productName, pid, pdId, userId }) {
   try {
-    console.log("productDetailId", productDetailId);
     const replacements = [];
 
     let query = `
       SELECT 
-        JSON_OBJECT(
-          'productDetailsId', pd.product_detail_id,
-          'defaultProductColorId', pd.fk_color_id,
-          'defaultProductSizeId', pd.fk_size_id,
-          'price', p.product_price_local,
-          'description', p.description,
-          'moreDetails', p.more_details,
-          'allColors', (
+          JSON_OBJECT(
+            'productName', p.product_name,
+            'productPrice', p.product_price_local,
+            'productId', p.product_id,
+            'productDetailsId', pd.product_detail_id,
+            'description', p.description,
+            'moreDetails', p.more_details,
+            'gallery', (
               SELECT JSON_ARRAYAGG(
-                  JSON_OBJECT(
-                      'color_hex', c.color_hex,
-                      'color_id', c.pk_color_id,
-                      'color_name', c.color_name
-                  )
+                JSON_OBJECT(
+                  'productImgId', pg.product_img_id,
+                  'urls', CAST(pg.gallary AS JSON)
+                )
               )
-              FROM product_colors c
-              WHERE c.pk_color_id IN (
-                  SELECT DISTINCT pd.fk_color_id
-                  FROM products_details pd
-                  WHERE pd.fk_product_id = p.product_id
-              )
-          ),
-          'allSizes', (
+              FROM product_gallary pg
+              WHERE pg.product_img_id = p.fk_gallary_id
+            ),
+            'allColorProducts', (
               SELECT JSON_ARRAYAGG(
-                  JSON_OBJECT(
-                      'size_name', s.size_name,
-                      'size_id', s.pk_size_id
-                  )
+                JSON_OBJECT(
+                  'productId', p2.product_id,
+                  'colorId', pc2.pk_color_id,
+                  'colorHex', pc2.color_hex
+                )
               )
-              FROM sizes s
-              WHERE s.pk_size_id IN (
-                  SELECT DISTINCT pd.fk_size_id
-                  FROM products_details pd
-                  WHERE pd.fk_product_id = p.product_id
+              FROM products p2
+              INNER JOIN product_colors pc2 ON p2.fk_color_id = pc2.pk_color_id
+              WHERE p2.product_name = p.product_name
+            ),
+            'sizesPerProductId', (
+              SELECT JSON_ARRAYAGG(
+                JSON_OBJECT(
+                  'productId', p3.product_id,
+                  'productDetailId', pd3.product_detail_id,
+                  'sizeId', s.pk_size_id,
+                  'sizeName', s.size_name,
+                  'inStock', pd3.in_stock
+                )
               )
-          )
-        ) AS product_data
+              FROM products p3
+              INNER JOIN products_details pd3 ON p3.product_id = pd3.fk_product_id
+              INNER JOIN sizes s ON pd3.fk_size_id = s.pk_size_id
+              WHERE p3.product_name = p.product_name 
+                AND pd3.fk_product_id = p.product_id
+            )
+          ) AS product_info
       FROM 
         products p
-      LEFT JOIN  -- ✅ Fix: Change INNER JOIN to LEFT JOIN
-        products_details pd ON pd.fk_product_id = p.product_id
+      INNER JOIN 
+        products_details pd ON p.product_id = pd.fk_product_id
       WHERE 1=1 
     `;
 
-    if (product_id !== undefined && product_id !== null) {
-      query += " AND p.product_id = ?";
-      replacements.push(product_id);
+    if (productName !== undefined) {
+      query += " AND p.product_name LIKE ?";
+      replacements.push(`%${productName}%`);
     }
 
-    if (productDetailId !== undefined && productDetailId !== null) {
-      query += " AND pd.product_detail_id = ?";
-      replacements.push(productDetailId);
+    if (pid !== undefined && pid !== null) {
+      query += " AND p.product_id = ?";
+      replacements.push(pid);
     }
-    
-    // Execute the query with replacements
+
+    if (pdId !== undefined && pdId !== null) {
+      query += " AND pd.product_detail_id = ?";
+      replacements.push(pdId);
+    }
+
     const [results] = await sequelize.query(query, { replacements });
 
-    console.log(`Fetched ${results.length} products`);
-
-    // ✅ Fix: Return `{}` instead of `[{}]`
-    if (!results || results.length === 0 || (results.length === 1 && Object.keys(results[0]).length === 0)) {
+    if (!results || results.length === 0) {
       return {};
     }
 
-    return results[0]; // ✅ Ensure only a single object is returned
+    return results[0];
   } catch (error) {
     console.error("Error fetching products:", error);
     return {};
   }
 }
+
 
 
 export async function findProductsByCategoryName({

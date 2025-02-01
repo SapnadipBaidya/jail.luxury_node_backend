@@ -12,36 +12,24 @@ router.post("/findAllProductsByCatagoryId", async (req, res) => {
   res.send({ status: "success", data });
 });
 
-router.get("/findProductsByPdId", async (req, res) => {
+router.get("/findProductsById", async (req, res) => {
   try {
     console.log(req.query); // Log the query parameters
 
     // Extract query parameters
     const {
-      gender = "",
-      size = "",
-      color = "",
-      priceStart = 0,
-      priceEnd = 10000,
-      fk_category_id = 5,
-      defaultFlag = 1,
-      page = 1,
+     productName ,
+     pid,
+     pdId,
+     userId=null
     } = req.query;
-
-    // Convert size and color to arrays if they are passed as strings
-    const sizeArray = size ? size.split(",") : [];
-    const colorArray = color ? color.split(",") : [];
 
     // Construct the payload object
     const payloadObj = {
-      gender,
-      size: sizeArray,
-      color: colorArray,
-      priceStart: Number(priceStart),
-      priceEnd: Number(priceEnd),
-      fk_category_id: Number(fk_category_id),
-      defaultFlag: Number(defaultFlag),
-      page: Number(page),
+      productName,
+      pid,
+      pdId,
+      userId
     };
 
     console.log("payloadObj is ::", payloadObj);
