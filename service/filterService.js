@@ -1,4 +1,5 @@
 import connection from "../config/connection.js";
+import { classifySearchTerms } from "./searchService.js";
 
 const sequelize = connection;
 
@@ -9,30 +10,24 @@ export async function getSizeFilterByCategory(categoryName) {
     if (!categoryName || typeof categoryName !== "string") {
       throw new Error("Invalid category name provided.");
     }
-
-    console.log("Fetching sizes for category:", categoryName);
+    const { colorTerm, productTerm, categoryTerm } = await classifySearchTerms(categoryName || '');
+    console.log("Fetching sizes for category:", "colorTerm", colorTerm, "productTerm", productTerm, "categoryTerm",categoryTerm);
 
     let results;
 
-    // Execute the query safely using placeholders
-    if (categoryName === "search") {
-      [results] = await sequelize.query(
-        `SELECT * 
-         FROM sizes`
-      );
-    } else {
-      [results] = await sequelize.query(
-        `SELECT * 
-        FROM sizes 
-        WHERE fk_category_id = (
-            SELECT catagory_id  
-            FROM product_catagory 
-            WHERE catagory_name = ?
-        )`,
-        { replacements: [categoryName] }
-      );
-    }
 
+      [results] = await sequelize.query(
+        `SELECT * 
+          FROM sizes 
+          WHERE fk_category_id IN (
+              SELECT catagory_id  
+              FROM product_catagory 
+              WHERE catagory_name LIKE CONCAT('%', ?, '%') OR category_mapping LIKE  CONCAT('%', ?, '%')
+          )`,
+        { replacements: [categoryTerm,categoryTerm] }
+      );
+    
+    console.log("results",results)
     // Ensure results exist before returning
     if (!results || results.length === 0) {
       console.warn(`No sizes found for category: ${categoryName}`);

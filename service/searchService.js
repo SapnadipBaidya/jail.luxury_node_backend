@@ -16,16 +16,20 @@ const sequelize = connection;
     const categoryList = categoryRows.map(row => row.catagory_name.toLowerCase());
 
     words.forEach(word => {
-        console.log("colorList",colorList,"categoryList",categoryList,"word",word);
+        console.log("colorList",colorList,"word",word,"\ncategoryList",categoryList,"word",word);
+        let flag= false;
         if (colorList.find(color => color.includes(word))) {
             colorTerm = word;
-        } else if (categoryList.find(category => category.includes(word))) {
-            categoryTerm = word;
-        } else {
+            flag= true
+        }  if (categoryList.find(category => category.includes(word))) {
+            categoryTerm = categoryList.find(category => category.includes(word));
+            flag= true
+        }  if(!flag){
             productTerm =word;
         }
+        console.log( "colorTerm",colorTerm, "productTerm",productTerm, "categoryTerm",categoryTerm);
     });
-    console.log( "colorTerm",colorTerm, "productTerm",productTerm, "categoryTerm",categoryTerm);
+    console.log( "final \ncolorTerm",colorTerm, "productTerm",productTerm, "categoryTerm",categoryTerm);
     return { colorTerm, productTerm, categoryTerm };
 }
 
@@ -46,43 +50,40 @@ export async function searchByNameColorCategory({ userInput, page, limit }) {
         // Base query
         let query = `
             SELECT 
-            pd.product_detail_id, 
-            p.product_name, 
-            pd.fk_color_id,
-            pd.fk_size_id,
-            p.product_id,
-            JSON_OBJECT(
-                "price", p.product_price_local,
-                "description", p.description,
-                "moreDetails", p.more_details,
-                "gallery", pg.product_gallrey
-            ) AS product_data
+                MIN(pd.product_detail_id) AS product_detail_id, 
+                p.product_name, 
+                p.fk_color_id,
+                MIN(pd.fk_size_id) AS fk_size_id,
+                p.product_id,
+                JSON_OBJECT(
+                    "price", p.product_price_local,
+                    "description", p.description,
+                    "moreDetails", p.more_details,
+                    "gallery", CAST(pg.gallary AS JSON)
+                ) AS product_data
             FROM products p
-            JOIN product_catagory pc ON p.fk_category_id = pc.catagory_id
-            JOIN products_details pd ON p.product_id = pd.fk_product_id
-            JOIN product_gallarey pg ON pg.product_img_id = pd.fk_gallery_id
-            JOIN product_colors col ON pd.fk_color_id = col.pk_color_id
+            INNER JOIN product_catagory pc ON p.fk_category_id = pc.catagory_id
+            INNER JOIN products_details pd ON p.product_id = pd.fk_product_id
+            INNER JOIN product_gallary pg ON pg.product_img_id = p.fk_gallary_id
+            INNER JOIN product_colors col ON p.fk_color_id = col.pk_color_id
             WHERE 
                 p.product_name LIKE CONCAT('%', :productTerm, '%') 
                 AND col.color_name LIKE CONCAT('%', :colorTerm, '%') 
                 AND pc.catagory_name LIKE CONCAT('%', :categoryTerm, '%') 
             GROUP BY 
-                pd.product_detail_id, 
-                p.product_name, 
-                pd.fk_color_id,
-                pd.fk_size_id,
                 p.product_id, 
+                p.fk_color_id, 
+                p.product_name, 
                 p.product_price_local, 
                 p.description, 
-                p.more_details,
-                pg.product_gallrey
-            ORDER BY p.product_name
+                p.more_details, 
+                pg.gallary
+            LIMIT :limit OFFSET :offset;
         `;
 
         // Add pagination
         const offset = (page - 1) * limit;
-        query += " LIMIT :limit OFFSET :offset";
-
+        
         // Define replacements
         const replacements = {
             productTerm,
@@ -107,7 +108,5 @@ export async function searchByNameColorCategory({ userInput, page, limit }) {
         return [];
     }
 }
-
-
 
 
