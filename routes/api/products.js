@@ -20,7 +20,7 @@ router.get("/findProductsById", async (req, res) => {
     const {
      productName ,
      pid,
-     pdId,
+     pdid,
      userId=null
     } = req.query;
 
@@ -28,7 +28,7 @@ router.get("/findProductsById", async (req, res) => {
     const payloadObj = {
       productName,
       pid,
-      pdId,
+      pdid,
       userId
     };
 
