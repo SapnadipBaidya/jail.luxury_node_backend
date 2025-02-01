@@ -76,9 +76,10 @@ router.get("/findProductsByCategoryName", async (req, res) => {
       return res.status(400).json({ error: "categoryName is required" });
     }
 
-    const colorArray = colorFilter ? colorFilter.split(",") : null;
-    const sizeArray = sizeFilter ? sizeFilter.split(",") : null;
-
+    console.log("colorFilter",colorFilter,"sizeFilter",sizeFilter)
+    const colorArray = colorFilter ? colorFilter.split(",").map((item)=>parseInt(item)) : null;
+    const sizeArray = sizeFilter ? sizeFilter.split(",").map((item)=>parseInt(item)) : null;
+    console.log("colorArray",colorArray,"sizeArray",sizeArray)
     const products = await productController.findProductsByCategoryName({
       categoryName,
       colorFilter: colorArray,
