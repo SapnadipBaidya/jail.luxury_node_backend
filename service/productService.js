@@ -183,7 +183,7 @@ export async function findAllProductsByCatagoryId({
   }
 }
 
-export async function findProductsByPdId({ productName, pid, pdId, userId }) {
+export async function findProductsByPdId({ productName, pid, pdid, userId }) {
   try {
     const replacements = [];
 
@@ -242,19 +242,19 @@ export async function findProductsByPdId({ productName, pid, pdId, userId }) {
       WHERE 1=1 
     `;
 
-    if (productName !== undefined) {
+    if (productName != "undefined") {
       query += " AND p.product_name LIKE ?";
       replacements.push(`%${productName}%`);
     }
 
-    if (pid !== undefined && pid !== null) {
+    if (pid != "undefined" && pid !== null) {
       query += " AND p.product_id = ?";
       replacements.push(pid);
     }
 
-    if (pdId !== undefined && pdId !== null) {
+    if (pdid != "undefined" && pdid !== null) {
       query += " AND pd.product_detail_id = ?";
-      replacements.push(pdId);
+      replacements.push(pdid);
     }
 
     const [results] = await sequelize.query(query, { replacements });
