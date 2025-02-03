@@ -47,7 +47,7 @@ app.use(async (req, res, next) => {
 const allowedOrigins =
   process.env.NODE_ENV === "production"
     ? ["https://your-frontend-domain.com"]
-    : ["http://localhost:3000"];
+    : ["*"];
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -65,7 +65,7 @@ app.use(passport.session());
 
 passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((user, done) => done(null, user));
-console.log("DB_IP id ",process.env.DB_IP)
+console.log("DB_IP id ", process.env.DB_IP);
 passport.use(
   new GoogleStrategy(
     {
@@ -87,6 +87,7 @@ passport.use(
             refreshToken: newRefreshToken,
           });
         }
+
         done(null, user);
       } catch (error) {
         console.error("Google Strategy Error:", error);
@@ -136,20 +137,24 @@ app.get(
   async (req, res) => {
     const accessToken = generateAccessToken(req.user);
     const refreshToken = await generateRefreshToken(req.user);
+
+    // ✅ Set Cookies
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 15 * 60 * 1000, // 15 minutes
+      sameSite: "Lax",
+    });
+
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "Strict",
-      maxAge: 30 * 24 * 60 * 60 * 1000,
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      sameSite: "Lax",
     });
-    setTokensCookies(
-      res,
-      accessToken,
-      refreshToken,
-      req.user.accessTokenExp,
-      req.user.refreshTokenExp
-    );
-    res.redirect("http://localhost:3000/user/profile");
+
+    // Redirect to Next.js frontend
+    res.redirect("http://localhost:3000/profile");
   }
 );
 

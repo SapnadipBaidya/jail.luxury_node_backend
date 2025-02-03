@@ -33,6 +33,8 @@ const verifyToken = (req, res, next) => {
 
   const token = authHeader.split(" ")[1];
 
+  console.log("token "+token+" authHeader ",authHeader)
+
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded; // Attach decoded token data to the request object
@@ -129,7 +131,7 @@ const generateAccessToken = (user) => {
   return jwt.sign(
     { user_id: user.user_id, email: user.email },
     process.env.JWT_SECRET,
-    { expiresIn: "1h" }
+    { expiresIn: "1m" }
   );
 };
 
@@ -165,7 +167,7 @@ app.get(
 // Google OAuth callback
 app.get(
   "/auth/google/callback",
-  passport.authenticate("google", { failureRedirect: "/login" }),
+  passport.authenticate("google", { failureRedirect: "/login-signup" }),
   async (req, res) => {
     const accessToken = generateAccessToken(req.user);
     const refreshToken = await generateRefreshToken(req.user);
@@ -180,7 +182,7 @@ app.get(
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "Lax",
-        maxAge:  15 * 60 * 60 * 1000,
+        maxAge:  15  * 60 * 1000,
       });
   
 
@@ -189,25 +191,41 @@ app.get(
 );
 
 // User success route
-app.get("/success", async (req, res) => {
-  if (!req.user) return res.status(401).send("Not authenticated");
+app.get("/success", verifyToken,async (req, res) => {
+    try {
+        console.log("req.user_id",req.user)
+        // Check if user is authenticated
+        if (!req.user || !req.user.user_id) {
+            return res.status(401).json({ error: "Not authenticated" });
+        }
 
-  const user = await User.findOne({ where: { user_id: req.user.user_id } });
-  if (!user) return res.status(404).send("User not found");
+        // Fetch user from DB
+        const user = await User.findOne({ where: { user_id: req.user.user_id } });
 
-  res.json({
-    user: {
-      id: user.user_id,
-      name: user.first_name,
-      email: user.email,
-    },
-  });
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // Send user details (excluding sensitive info)
+        res.status(200).json({
+            user: {
+                id: user.user_id,
+                name: user.first_name,
+                email: user.email,
+            },
+        });  
+    } catch (error) {
+        console.error("Error fetching user:", error); // Log error for debugging
+        res.status(500).json({ error: "Internal Server Error" });
+    }
 });
+
 
 // Refresh token route
 app.get("/auth/refresh", async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
 
+  console.log("got refresh from client",refreshToken)
   if (!refreshToken) return res.status(401).send("No refresh token provided");
 
   try {
@@ -218,20 +236,21 @@ app.get("/auth/refresh", async (req, res) => {
     const newRefreshToken = await generateRefreshToken(user);
 
     res.cookie("refreshToken", newRefreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Strict",
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-    });
-
-    res.cookie("accessToken", accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "Lax",
-        maxAge: 15 * 60 * 60 * 1000,
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       });
 
-    res.json({ accessToken: newAccessToken });
+    res.status(200).json({
+        accessToken:newAccessToken,
+        refreshToken:newRefreshToken,
+        user: {
+            id: user.user_id,
+            name: user.first_name,
+            email: user.email,
+        },
+    }); 
   } catch (error) {
     console.error("Refresh Token Error:", error);
     res.status(500).send("Failed to refresh token");
