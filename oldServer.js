@@ -12,6 +12,7 @@ import { AppError, globalErrorHandler } from "./middlewares/errorHandler.js";
 import User from "./models/User.js";
 import connection from "./config/connection.js";
 import dotenv from "dotenv";
+import { verifyToken } from "./utils/verifyToken.js";
 
 
 dotenv.config();
@@ -24,26 +25,7 @@ const PORT = process.env.PORT || 3001;
 
 
 
-const verifyToken = (req, res, next) => {
-  const authHeader = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ message: "Access denied, token missing" });
-  }
-
-  const token = authHeader.split(" ")[1];
-
-  console.log("token "+token+" authHeader ",authHeader)
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // Attach decoded token data to the request object
-    next();
-  } catch (error) {
-    console.error("Token verification failed:", error);
-    res.status(403).json({ message: "Invalid or expired token" });
-  }
-};
 
 // ============================ Middleware ============================
 
@@ -174,13 +156,13 @@ app.get(
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: true,
       sameSite: "Lax",
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     });
     res.cookie("accessToken", accessToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: true,
         sameSite: "Lax",
         maxAge:  15  * 60 * 1000,
       });
@@ -237,7 +219,7 @@ app.get("/auth/refresh", async (req, res) => {
 
     res.cookie("refreshToken", newRefreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: true,
         sameSite: "Lax",
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       });

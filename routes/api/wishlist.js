@@ -3,10 +3,11 @@ const router = express.Router();
 
 
 import * as wishlistController from "../../controllers/wishlistController.js";
+import { verifyToken } from "../../utils/verifyToken.js";
 
 
-router.post("/addOrEditWishlist", async (req, res) => {
-    console.log(req.body)
+router.post("/addOrEditWishlist",verifyToken, async (req, res) => {
+  console.log("req.user_id",req.user)
     const { payloadObj } = req.body;
     console.log("payloadObj is :: " + payloadObj);
     const data = await wishlistController.addOrEditWishlist(payloadObj);
