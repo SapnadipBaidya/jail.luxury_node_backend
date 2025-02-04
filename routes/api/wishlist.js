@@ -16,14 +16,38 @@ router.post("/addOrEditWishlist",verifyToken, async (req, res) => {
   
 });
 
-router.post("/fetchUserWishlist", async (req, res) => {
-  // find all categories including its associated Product
-  console.log(req.body)
-  const { payloadObj } = req.body;
-  console.log("payloadObj is :: " + payloadObj);
-  const data = await wishlistController.fetchUserWishlist(payloadObj);
-  res.send({ status: "success", data });
+
+router.post("/fetchUserWishlist", verifyToken, async (req, res) => {
+  try {
+    // Log the request for debugging
+    console.log("fetchUserWishlist request received. User:", req.user);
+
+    // Validate the request
+    if (!req.user || !req.user.user_id) {
+      console.error("Invalid user data in request.");
+      return res.status(400).send({ error: "Invalid user data." });
+    }
+
+    // Fetch the user's wishlist
+    const data = await wishlistController.fetchUserWishlist({ userId: req.user.user_id });
+
+    // Check if data was returned
+    if (!data) {
+      console.error("No data returned from wishlistController.");
+      return res.status(404).send({ error: "Wishlist not found." });
+    }
+
+    // Send the response
+    res.status(200).send( data );
+  } catch (error) {
+    // Log the error for debugging
+    console.error("Error in fetchUserWishlist route:", error);
+
+    // Send a generic error response
+    res.status(500).send({ error: "An error occurred while fetching the wishlist." });
+  }
 });
+
 
 router.post("/deleteFromUserWishlist", async (req, res) => {
     // find all categories including its associated Product

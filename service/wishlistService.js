@@ -93,22 +93,24 @@ export async function deleteFromUserWishlist({ userId,productsDetailsId, product
     }
 }
 
-
 export async function fetchUserWishlist({ userId }) {
   try {
     console.log("userId", userId);
     const replacements = [];
     let query = ` SELECT 
-   p.product_id , 
+   pd.product_detail_id , 
+   p.product_name,
+   p.fk_color_id,
+   pd.fk_size_id,
+   p.product_id,
+
    JSON_OBJECT(
-      'product_id', p.product_id,
-      'product_price_inr', p.product_price_local,
-      'product_name', p.product_name,
-      'products_details_id',pd.product_detail_id
-    ) AS product_details,
-     JSON_OBJECT(
-     'gallery',g.product_gallrey
-     ) AS gallery_details
+      "price", p.product_price_local,
+      "description", p.description,
+      "moreDetails", p.more_details,
+      "gallery", CAST(pg.gallary AS JSON)
+    ) AS product_data
+
     FROM 
       wishlist_items wi 
     JOIN 
@@ -116,7 +118,7 @@ export async function fetchUserWishlist({ userId }) {
     left JOIN 
       products_details pd ON pd.product_detail_id = wi.fk_products_details_id   
     LEFT JOIN 
-      product_gallarey g ON pd.fk_gallery_id = g.product_img_id   
+      product_gallary pg ON p.fk_gallary_id = pg.product_img_id   
     LEFT JOIN 
       wishlist w ON w.wishlist_id  = wi.fk_wishlist_id
     
