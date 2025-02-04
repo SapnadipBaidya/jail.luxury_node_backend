@@ -9,6 +9,7 @@ import { verifyToken } from "../../utils/verifyToken.js";
 router.post("/addOrEditWishlist",verifyToken, async (req, res) => {
   console.log("req.user_id",req.user)
     const { payloadObj } = req.body;
+    payloadObj.userId  = req.user.user_id
     console.log("payloadObj is :: " + payloadObj);
     const data = await wishlistController.addOrEditWishlist(payloadObj);
     res.send({ status: "success", data });

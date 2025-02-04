@@ -5,7 +5,6 @@ import session from "express-session";
 import cookieParser from "cookie-parser";
 import { RateLimiterMemory } from "rate-limiter-flexible";
 import GoogleStrategy from "passport-google-oauth20";
-import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import routes from "./routes/index.js";
 import { AppError, globalErrorHandler } from "./middlewares/errorHandler.js";
@@ -14,7 +13,7 @@ import connection from "./config/connection.js";
 import dotenv from "dotenv";
 import { verifyToken } from "./utils/verifyToken.js";
 
-
+import jwt from "jsonwebtoken";
 dotenv.config();
 
 const sequelize = connection;
