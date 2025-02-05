@@ -49,10 +49,10 @@ router.post("/fetchUserWishlist", verifyToken, async (req, res) => {
 });
 
 
-router.post("/deleteFromUserWishlist", async (req, res) => {
-    // find all categories including its associated Product
-    console.log(req.body)
+router.post("/deleteFromUserWishlist",verifyToken, async (req, res) => {
+  console.log("req.user_id",req.user,req.body)
     const { payloadObj } = req.body;
+    payloadObj.userId  = req.user.user_id
     console.log("payloadObj is :: " + payloadObj);
     const data = await wishlistController.deleteFromUserWishlist(payloadObj);
     res.send({ status: "success", data });
