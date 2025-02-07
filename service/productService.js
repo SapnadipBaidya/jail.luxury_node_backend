@@ -284,30 +284,38 @@ export async function findProductsByCategoryName({
   userId = null,
 }) {
   try {
-    console.log(`Fetching products for category: ${categoryName}`);
+    console.log(`Fetching products for category: ${categoryName} for userId`,userId);
 
     // Base query
     let query = `
-      SELECT 
-        MIN(pd.product_detail_id) AS product_detail_id, 
-        p.product_name, 
-        p.fk_color_id,
-        MIN(pd.fk_size_id) AS fk_size_id,
-        p.product_id,
-        MAX(pd.updated_at) AS latest_updated,
-        MAX(pd.created_at) AS latest_created,
-        p.product_price_local,
-        JSON_OBJECT(
-          "price", p.product_price_local,
-          "description", p.description,
-          "moreDetails", p.more_details,
-          "gallery", CAST(pg.gallary AS JSON)
-        ) AS product_data
-      FROM products p
-      INNER JOIN product_catagory pc ON p.fk_category_id = pc.catagory_id
-      INNER JOIN products_details pd ON p.product_id = pd.fk_product_id
-      INNER JOIN product_gallary pg ON pg.product_img_id = p.fk_gallary_id
-      INNER JOIN product_colors col ON p.fk_color_id = col.pk_color_id
+     SELECT 
+    MIN(pd.product_detail_id) AS product_detail_id, 
+    p.product_name, 
+    p.fk_color_id,
+    MIN(pd.fk_size_id) AS fk_size_id,
+    p.product_id,
+    MAX(pd.updated_at) AS latest_updated,
+    MAX(pd.created_at) AS latest_created,
+    p.product_price_local,
+    JSON_OBJECT(
+        "price", p.product_price_local,
+        "description", p.description,
+        "moreDetails", p.more_details,
+        "gallery", pg.gallary
+    ) AS product_data
+FROM products p
+INNER JOIN product_catagory pc 
+    ON p.fk_category_id = pc.catagory_id
+INNER JOIN products_details pd 
+    ON p.product_id = pd.fk_product_id
+INNER JOIN product_gallary pg 
+    ON pg.product_img_id = p.fk_gallary_id
+INNER JOIN product_colors col 
+    ON p.fk_color_id = col.pk_color_id
+INNER JOIN wishlist_items wi 
+    ON p.product_id = wi.fk_product_id 
+    AND pd.product_detail_id = wi.fk_products_details_id
+GROUP BY p.product_id, p.product_name, p.fk_color_id, p.product_price_local, pg.gallary;
     `;
 
     const whereClauses = [];
@@ -342,6 +350,8 @@ export async function findProductsByCategoryName({
     if (whereClauses.length > 0) {
       query += ` WHERE ${whereClauses.join(' AND ')}`;
     }
+
+    if
 
     // Group by
     query += `

@@ -5,7 +5,7 @@ export async function addOrEditCart({
   userId,
   productsDetailsId,
   product_id,
-  quantity,
+  quantity=1,
 }) {
   try {
     // ✅ Validate input parameters
@@ -51,8 +51,8 @@ export async function addOrEditCart({
     console.log("existingItem  is ", existingItem);
 
     const [productPriceInr] = await sequelize.query(
-      `SELECT product_price_inr FROM products_details WHERE product_detail_id = ?`,
-      { replacements: [productsDetailsId], type: sequelize.QueryTypes.SELECT }
+      `SELECT product_price_local FROM products WHERE product_id = ?`,
+      { replacements: [product_id], type: sequelize.QueryTypes.SELECT }
     );
     console.log("productPriceInr", productPriceInr);
 
@@ -60,7 +60,7 @@ export async function addOrEditCart({
       throw new Error(`Product details not found for ID: ${productsDetailsId}`);
     }
 
-    const itemPrice = productPriceInr.product_price_inr; // Extract the price from the query result
+    const itemPrice = productPriceInr.product_price_local; // Extract the price from the query result
 
     let modifiedQuantity = existingItem?.quantity ? existingItem?.quantity : 0
     console.log("modifiedQuantity",modifiedQuantity,"quantity",quantity)

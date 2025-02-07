@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as productController from "../../controllers/productController.js";
 import * as searchController from "../../controllers/searchController.js";
+import { getUserFromToken } from "../../utils/verifyToken.js";
 
 const router = Router();
 
@@ -56,10 +57,17 @@ router.get("/findProductsByCategoryName", async (req, res) => {
       sortOrder = "DESC",
       page = 1,
       limit = 12,
-      userId,
       gender
     } = req.query;
 
+    let userId = null;
+    try {
+      userId = getUserFromToken(req)?.user_id
+    } catch (error) {
+      console.error("getUserFromToken ",error)
+      userId = null
+    }
+    
     if (!categoryName) {
       return res.status(400).json({ error: "categoryName is required" });
     }
