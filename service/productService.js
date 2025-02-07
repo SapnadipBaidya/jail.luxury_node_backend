@@ -284,59 +284,67 @@ export async function findProductsByCategoryName({
   userId = null,
 }) {
   try {
-    console.log(`Fetching products for category: ${categoryName} for userId`,userId);
+    console.log(`Fetching products for category: ${categoryName} for userId`, userId);
 
     // Base query
     let query = `
-     SELECT 
-    MIN(pd.product_detail_id) AS product_detail_id, 
-    p.product_name, 
-    p.fk_color_id,
-    MIN(pd.fk_size_id) AS fk_size_id,
-    p.product_id,
-    MAX(pd.updated_at) AS latest_updated,
-    MAX(pd.created_at) AS latest_created,
-    p.product_price_local,
-    JSON_OBJECT(
-        "price", p.product_price_local,
-        "description", p.description,
-        "moreDetails", p.more_details,
-        "gallery", pg.gallary
-    ) AS product_data
-FROM products p
-INNER JOIN product_catagory pc 
-    ON p.fk_category_id = pc.catagory_id
-INNER JOIN products_details pd 
-    ON p.product_id = pd.fk_product_id
-INNER JOIN product_gallary pg 
-    ON pg.product_img_id = p.fk_gallary_id
-INNER JOIN product_colors col 
-    ON p.fk_color_id = col.pk_color_id
-INNER JOIN wishlist_items wi 
-    ON p.product_id = wi.fk_product_id 
-    AND pd.product_detail_id = wi.fk_products_details_id
-GROUP BY p.product_id, p.product_name, p.fk_color_id, p.product_price_local, pg.gallary;
+      SELECT 
+        MIN(pd.product_detail_id) AS product_detail_id, 
+        p.product_name, 
+        p.fk_color_id,
+        MIN(pd.fk_size_id) AS fk_size_id,
+        p.product_id,
+        MAX(pd.updated_at) AS latest_updated,
+        MAX(pd.created_at) AS latest_created,
+        p.product_price_local,
+        JSON_OBJECT(
+            "price", p.product_price_local,
+            "description", p.description,
+            "moreDetails", p.more_details,
+            "gallery", CAST(pg.gallary AS JSON),
+            'isWishlisted', 
+            IF(EXISTS (
+                SELECT 1 
+                FROM wishlist_items wi 
+                JOIN wishlist w ON wi.fk_wishlist_id = w.wishlist_id 
+                WHERE wi.fk_products_details_id = (
+                    SELECT MIN(pd2.product_detail_id)
+                    FROM products_details pd2
+                    WHERE pd2.fk_product_id = p.product_id
+                )
+                AND wi.fk_product_id = p.product_id
+                AND w.fk_user_id = :userId
+            ), TRUE, FALSE)
+        ) AS product_data
+      FROM products p
+      INNER JOIN product_catagory pc 
+          ON p.fk_category_id = pc.catagory_id
+      INNER JOIN products_details pd 
+          ON p.product_id = pd.fk_product_id
+      INNER JOIN product_gallary pg 
+          ON pg.product_img_id = p.fk_gallary_id
+      INNER JOIN product_colors col 
+          ON p.fk_color_id = col.pk_color_id
     `;
 
     const whereClauses = [];
     const replacements = {
       categoryName: categoryName,
+      userId: userId || null, // Add userId to replacements
     };
 
     // Category filter (required)
-    whereClauses.push(`pc.catagory_name = :categoryName `);
+    whereClauses.push(`pc.catagory_name = :categoryName`);
 
-    // Color 
-    console.log("incoming colorFitler",colorFilter)
+    // Color filter
     if (colorFilter) {
-      whereClauses.push(` col.pk_color_id in (:colorFilter) `);
+      whereClauses.push(`col.pk_color_id IN (:colorFilter)`);
       replacements.colorFilter = colorFilter;
     }
 
     // Size filter
-    console.log("incoming sizeFilter",sizeFilter)
-    if (sizeFilter !== null && sizeFilter !== undefined ) {
-      whereClauses.push(`pd.fk_size_id in (:sizeFilter)`);
+    if (sizeFilter !== null && sizeFilter !== undefined) {
+      whereClauses.push(`pd.fk_size_id IN (:sizeFilter)`);
       replacements.sizeFilter = sizeFilter;
     }
 
@@ -351,30 +359,26 @@ GROUP BY p.product_id, p.product_name, p.fk_color_id, p.product_price_local, pg.
       query += ` WHERE ${whereClauses.join(' AND ')}`;
     }
 
-    if
-
     // Group by
     query += `
       GROUP BY 
         p.product_id, 
-        p.fk_color_id, 
         p.product_name, 
+        p.fk_color_id, 
         p.product_price_local, 
-        p.description, 
-        p.more_details, 
-        pg.gallary
+        pg.gallary,
+        p.description,
+        p.more_details
     `;
 
-    // Sorting logic
+    // Sorting
     const sortFieldMap = {
       'updated_at': 'latest_updated',
       'created_at': 'latest_created',
       'product_price_local': 'product_price_local'
     };
-
     const validSortOrder = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
     const sortField = sortFieldMap[sortBy] || 'latest_updated';
-
     query += ` ORDER BY ${sortField} ${validSortOrder}`;
 
     // Pagination
@@ -386,7 +390,7 @@ GROUP BY p.product_id, p.product_name, p.fk_color_id, p.product_price_local, pg.
     console.log("Final Query:", query);
     console.log("Replacements:", replacements);
 
-    const [results] = await sequelize.query(query, { replacements });
+    const [results] = await sequelize.query(query, { replacements});
     console.log(`Fetched ${results.length} products`);
     return results;
   } catch (error) {
@@ -451,6 +455,8 @@ export async function findAllAvalibaleSizesByPidAndColorId({ productId, fkColorI
     console.log("Executing Query:", query, "Replacements:", replacements);
 
     const [results] = await sequelize.query(query, { replacements });
+
+    console.log("results",results)
 
     return results;
   } catch (error) {
