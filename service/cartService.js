@@ -165,7 +165,7 @@ export async function fetchUserCart({ userId }) {
       'products_details_id',pd.product_detail_id
     ) AS product_details,
      JSON_OBJECT(
-     'gallery',g.product_gallrey
+     'gallary', CAST(g.gallary AS JSON)
      ) AS gallery_details,
      JSON_OBJECT(
      'itemPrice',ci.item_price,
@@ -182,7 +182,7 @@ export async function fetchUserCart({ userId }) {
     left JOIN 
       products_details pd ON pd.product_detail_id = ci.fk_product_details_id   
     LEFT JOIN 
-      product_gallarey g ON pd.fk_gallery_id = g.product_img_id  
+      product_gallary g ON p.fk_gallary_id = g.product_img_id  
     LEFT JOIN 
       sizes s ON pd.fk_size_id = s.pk_size_id  
     LEFT JOIN 
