@@ -49,10 +49,11 @@ router.post("/fetchUserCart", verifyToken, async (req, res) => {
 
 
 
-router.post("/deleteFromUserCart", async (req, res) => {
+router.post("/deleteFromUserCart",verifyToken, async (req, res) => {
     // find all categories including its associated Product
-    console.log(req.body);
+    console.log("req.user_id",req.user,req.body)
     const { payloadObj } = req.body;
+    payloadObj.userId  = req.user.user_id
     console.log("payloadObj is :: " + payloadObj);
     const data = await cartController.deleteFromUserCart(payloadObj);
     res.send({ status: "success", data });
