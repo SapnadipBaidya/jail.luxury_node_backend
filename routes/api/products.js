@@ -53,39 +53,55 @@ router.get("/findProductsByCategoryName", async (req, res) => {
       categoryName,
       colorFilter,
       sizeFilter,
-      sortBy = "updated_at",
-      sortOrder = "DESC",
-      page = 1,
-      limit = 12,
+      sortBy,
+      sortOrder,
+      page,
+      limit,
       gender
     } = req.query;
 
+    // Helper function to normalize query parameters
+    const normalizeParam = (param, defaultValue = null) => {
+      if (param === undefined || param === null || param.trim() === "") {
+        return defaultValue;
+      }
+      return param;
+    };
+
     let userId = null;
     try {
-      userId = getUserFromToken(req)?.user_id
+      userId = getUserFromToken(req)?.user_id;
     } catch (error) {
-      console.error("getUserFromToken ",error)
-      userId = null
+      console.error("getUserFromToken error:", error);
+      userId = null;
     }
     
-    if (!categoryName) {
+    if (!normalizeParam(categoryName)) {
       return res.status(400).json({ error: "categoryName is required" });
     }
 
-    console.log("colorFilter",colorFilter,"sizeFilter",sizeFilter)
-    const colorArray = colorFilter ? colorFilter.split(",").map((item)=>parseInt(item)) : null;
-    const sizeArray = sizeFilter ? sizeFilter.split(",").map((item)=>parseInt(item)) : null;
-    console.log("colorArray",colorArray,"sizeArray",sizeArray)
+    console.log("colorFilter", colorFilter, "sizeFilter", sizeFilter);
+
+    const colorArray = normalizeParam(colorFilter) 
+      ? colorFilter.split(",").map((item) => parseInt(item, 10)) 
+      : null;
+
+    const sizeArray = normalizeParam(sizeFilter) 
+      ? sizeFilter.split(",").map((item) => parseInt(item, 10)) 
+      : null;
+
+    console.log("colorArray", colorArray, "sizeArray", sizeArray);
+
     const products = await productController.findProductsByCategoryName({
-      categoryName,
+      categoryName: normalizeParam(categoryName),
       colorFilter: colorArray,
       sizeFilter: sizeArray,
-      sortBy,
-      sortOrder,
-      page: parseInt(page, 10),
-      limit: parseInt(limit, 10),
+      sortBy: normalizeParam(sortBy, "updated_at"),
+      sortOrder: normalizeParam(sortOrder, "DESC"),
+      page: parseInt(normalizeParam(page, "1"), 10),
+      limit: parseInt(normalizeParam(limit, "12"), 10),
       userId,
-      gender
+      gender: normalizeParam(gender),
     });
 
     return res.status(200).json(products);
@@ -94,6 +110,7 @@ router.get("/findProductsByCategoryName", async (req, res) => {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
 
 router.post("/findAllAvalibaleColorsByPidAndSizeId", async (req, res) => {
   console.log(req.body);

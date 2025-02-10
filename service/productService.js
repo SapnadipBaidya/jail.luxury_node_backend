@@ -15,10 +15,7 @@ const allowedProductFilters = [
 
 const allowedSortColumns = [
   "product_name",
-  "product_price_inr",
-  "updated_at",
-  "is_popular",
-  "is_featured",
+  "product_price_local"
 ];
 
 export async function findAllProductsByCatagoryId({
@@ -153,7 +150,7 @@ export async function findAllProductsByCatagoryId({
     // ✅ Apply Sorting (Only if it's a valid column)
     if (allowedSortColumns.includes(sortBy)) {
       console.log("sortBy", sortBy);
-      query += ` pd.${sortBy} ${
+      query += ` p.${sortBy} ${
         sortOrder.toUpperCase() === "DESC" ? "DESC" : "ASC"
       } `;
     } else {
