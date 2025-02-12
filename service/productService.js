@@ -525,6 +525,8 @@ export async function findBestSellerByGender({ gender, userId }) {
       replacements
     });
 
+
+    console.log("results",results)
     return results;
   } catch (error) {
     console.error("❌ Error in findBestSellerByGender:", error);

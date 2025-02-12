@@ -165,7 +165,7 @@ router.get("/findBestSellerByGender", async (req, res) => {
   try {
     // Fetch bestseller data
     const responseData = await productController.findBestSellerByGender({gender,userId});
-    res.send({ status: "success", data: responseData });
+    return res.status(200).json(responseData);
   } catch (error) {
     console.error("Error in findBestSellerByGender:", error);
     res.status(500).send({ status: "error", message: "Internal server error", details: error.message });
