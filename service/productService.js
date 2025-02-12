@@ -182,18 +182,34 @@ export async function findAllProductsByCatagoryId({
 
 export async function findProductsByPdId({ productName, pid, pdid, userId }) {
   try {
-    const replacements = [];
+    const replacements = [userId,userId];
 
     let query = `
       SELECT 
-          JSON_OBJECT(
-            'productName', p.product_name,
-            'productPrice', p.product_price_local,
-            'productId', p.product_id,
-            'productDetailsId', pd.product_detail_id,
-            'description', p.description,
-            'moreDetails', p.more_details,
-            'gallery', (
+        JSON_OBJECT(
+          'productName', p.product_name,
+          'productPrice', p.product_price_local,
+          'productId', p.product_id,
+          'productDetailsId', pd.product_detail_id,
+          'description', p.description,
+          'moreDetails', p.more_details,
+          'is_wishlisted', 
+            IF(EXISTS (
+              SELECT 1 FROM wishlist_items wi 
+              JOIN wishlist w ON wi.fk_wishlist_id = w.wishlist_id 
+              WHERE wi.fk_products_details_id = pd.product_detail_id 
+              AND wi.fk_product_id = p.product_id
+              AND w.fk_user_id = ?
+            ), TRUE, FALSE),
+           'is_carted', 
+            IF(EXISTS (
+              SELECT 1 FROM cart_items ci 
+              JOIN carts c ON ci.fk_cart_id = c.cart_id 
+              WHERE ci.fk_product_details_id = pd.product_detail_id 
+              AND ci.fk_product_id = p.product_id
+              AND c.fk_user_id = ?
+            ), TRUE, FALSE),
+          'gallery', (
               SELECT JSON_ARRAYAGG(
                 JSON_OBJECT(
                   'productImgId', pg.product_img_id,
@@ -203,40 +219,40 @@ export async function findProductsByPdId({ productName, pid, pdid, userId }) {
               FROM product_gallary pg
               WHERE pg.product_img_id = p.fk_gallary_id
             ),
-            'allColorProducts', (
-              SELECT JSON_ARRAYAGG(
-                JSON_OBJECT(
-                  'productId', p2.product_id,
-                  'colorId', pc2.pk_color_id,
-                  'colorHex', pc2.color_hex
-                )
+          'allColorProducts', (
+            SELECT JSON_ARRAYAGG(
+              JSON_OBJECT(
+                'productId', p2.product_id,
+                'colorId', pc2.pk_color_id,
+                'colorHex', pc2.color_hex
               )
-              FROM products p2
-              INNER JOIN product_colors pc2 ON p2.fk_color_id = pc2.pk_color_id
-              WHERE p2.product_name = p.product_name
-            ),
-            'sizesPerProductId', (
-              SELECT JSON_ARRAYAGG(
-                JSON_OBJECT(
-                  'productId', p3.product_id,
-                  'productDetailId', pd3.product_detail_id,
-                  'sizeId', s.pk_size_id,
-                  'sizeName', s.size_name,
-                  'inStock', pd3.in_stock
-                )
-              )
-              FROM products p3
-              INNER JOIN products_details pd3 ON p3.product_id = pd3.fk_product_id
-              INNER JOIN sizes s ON pd3.fk_size_id = s.pk_size_id
-              WHERE p3.product_name = p.product_name 
-                AND pd3.fk_product_id = p.product_id
             )
-          ) AS product_info
+            FROM products p2
+            INNER JOIN product_colors pc2 ON p2.fk_color_id = pc2.pk_color_id
+            WHERE p2.product_name = p.product_name
+          ),
+          'sizesPerProductId', (
+            SELECT JSON_ARRAYAGG(
+              JSON_OBJECT(
+                'productId', p3.product_id,
+                'productDetailId', pd3.product_detail_id,
+                'sizeId', s.pk_size_id,
+                'sizeName', s.size_name,
+                'inStock', pd3.in_stock
+              )
+            )
+            FROM products p3
+            INNER JOIN products_details pd3 ON p3.product_id = pd3.fk_product_id
+            INNER JOIN sizes s ON pd3.fk_size_id = s.pk_size_id
+            WHERE p3.product_name = p.product_name 
+              AND pd3.fk_product_id = p.product_id
+          )
+        ) AS product_info
       FROM 
         products p
       INNER JOIN 
         products_details pd ON p.product_id = pd.fk_product_id
-      WHERE 1=1 
+      WHERE 1=1
     `;
 
     if (productName != "undefined") {
@@ -256,11 +272,7 @@ export async function findProductsByPdId({ productName, pid, pdid, userId }) {
 
     const [results] = await sequelize.query(query, { replacements });
 
-    if (!results || results.length === 0) {
-      return {};
-    }
-
-    return results[0];
+    return results[0] || {};
   } catch (error) {
     console.error("Error fetching products:", error);
     return {};
@@ -462,5 +474,60 @@ export async function findAllAvalibaleSizesByPidAndColorId({ productId, fkColorI
   }
 }
 
+export async function findBestSellerByGender({ gender, userId }) {
+  try {
+    const replacements = { userId };
+    let query = `
+      SELECT 
+        ANY_VALUE(pd.product_detail_id) AS product_detail_id,
+        ANY_VALUE(p.product_name) AS product_name,
+        ANY_VALUE(p.fk_color_id) AS fk_color_id,
+        ANY_VALUE(pd.fk_size_id) AS fk_size_id,
+        ANY_VALUE(p.gender) AS gender,
 
+        p.product_id,
+        ANY_VALUE(pd.updated_at) AS latest_updated,
+        ANY_VALUE(pd.created_at) AS latest_created,
+        ANY_VALUE(p.product_price_local) AS product_price_local,
+        JSON_OBJECT(
+          'price', ANY_VALUE(p.product_price_local),
+          'description', ANY_VALUE(p.description),
+          'moreDetails', ANY_VALUE(p.more_details),
+          'gallery', CAST(ANY_VALUE(pg.gallary) AS JSON),
+          'isWishlisted', ANY_VALUE(EXISTS (
+            SELECT 1 
+            FROM wishlist_items wi
+            JOIN wishlist w ON wi.fk_wishlist_id = w.wishlist_id
+            WHERE wi.fk_products_details_id = pd.product_detail_id
+              AND wi.fk_product_id = p.product_id
+              AND w.fk_user_id = :userId
+          ))
+        ) AS product_data
+      FROM products p
+      INNER JOIN products_details pd 
+        ON p.product_id = pd.fk_product_id
+      INNER JOIN product_gallary pg 
+        ON pg.product_img_id = p.fk_gallary_id
+      WHERE p.is_bestseller = 1
+    `;
 
+    if (gender !== null) {
+      query += " AND p.gender = :gender";
+      replacements.gender = gender;
+    }
+
+    query += `
+      GROUP BY p.product_id
+      ORDER BY ANY_VALUE(pd.created_at) DESC
+    `;
+
+    const [results] = await sequelize.query(query, { 
+      replacements
+    });
+
+    return results;
+  } catch (error) {
+    console.error("❌ Error in findBestSellerByGender:", error);
+    throw error;
+  }
+}

@@ -14,6 +14,15 @@ router.post("/findAllProductsByCatagoryId", async (req, res) => {
 });
 
 router.get("/findProductsById", async (req, res) => {
+
+  let userId = null;
+  try {
+    userId = getUserFromToken(req)?.user_id;
+  } catch (error) {
+    console.error("getUserFromToken error:", error);
+    userId = null;
+  }
+
   try {
     console.log(req.query); // Log the query parameters
 
@@ -22,7 +31,6 @@ router.get("/findProductsById", async (req, res) => {
      productName ,
      pid,
      pdid,
-     userId=null
     } = req.query;
 
     // Construct the payload object
@@ -129,6 +137,41 @@ router.post("/findAllAvalibaleSizesByPidAndColorId", async (req, res) => {
     await productController.findAllAvalibaleSizesByPidAndColorId(payloadObj);
   res.send({ status: "success", responseData });
 });
+
+
+router.get("/findBestSellerByGender", async (req, res) => {
+  let userId = null;
+
+
+  const {
+    gender
+  } = req.query;
+  // Extract user ID from token
+  try {
+    const user = getUserFromToken(req);
+    userId = user?.user_id || null;
+  } catch (error) {
+    console.error("Error extracting user from token:", error);
+    return res.status(401).send({ status: "error", message: "Invalid or expired token" });
+  }
+
+  // Validate request body
+  if (!req.query || !req.query) {
+    return res.status(400).send({ status: "error", message: "Missing payloadObj in request body" });
+  }
+
+  console.log("Processed gender:", gender);
+
+  try {
+    // Fetch bestseller data
+    const responseData = await productController.findBestSellerByGender({gender,userId});
+    res.send({ status: "success", data: responseData });
+  } catch (error) {
+    console.error("Error in findBestSellerByGender:", error);
+    res.status(500).send({ status: "error", message: "Internal server error", details: error.message });
+  }
+});
+
 
 router.get("/searchByNameColorCategory", async (req, res) => {
   const { userInput,page=1,limit=12 } = req.query;

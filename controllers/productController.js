@@ -3,8 +3,14 @@ export async function findAllProductsByCatagoryId(FilterObj) {
   return await productService.findAllProductsByCatagoryId(FilterObj);
 }
 
-export async function findProductsByPdId(FilterObj) {
-  return await productService.findProductsByPdId(FilterObj);
+export async function findProductsByPdId({  productName,
+  pid,
+  pdid,
+  userId= null}) {
+  return await productService.findProductsByPdId({  productName,
+    pid,
+    pdid,
+    userId});
 }
 
 export async function findProductsByCategoryName({
@@ -32,8 +38,12 @@ export async function findProductsByCategoryName({
   }
   
 
-export async function findAllAvalibaleSizesByPidAndColorId(FilterObj) {
+export async function findAllAvalibaleSizesByPidAndColorId({FilterObj}) {
   return await productService.findAllAvalibaleSizesByPidAndColorId(FilterObj);
+}
+
+export async function findBestSellerByGender({gender,userId=null}) {
+  return await productService.findBestSellerByGender({gender,userId});
 }
 
 export async function findAllAvalibaleColorsByPidAndSizeId(FilterObj) {
