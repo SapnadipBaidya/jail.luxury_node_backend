@@ -167,7 +167,7 @@ app.get(
       });
   
 
-    res.redirect(`http://localhost:3000/profile`);
+    res.redirect(`http://localhost:3000/`);
   }
 );
 
@@ -245,7 +245,9 @@ app.get("/auth/refresh", async (req, res) => {
 
 // Logout route
 app.post("/logout", async (req, res) => {
+  console.log("req.cookies",req.cookies)
   const refreshToken = req.cookies?.refreshToken;
+
 
   if (refreshToken) {
     try {
