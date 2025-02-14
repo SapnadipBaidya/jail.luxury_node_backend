@@ -1,5 +1,6 @@
 import connection from "../config/connection.js";
 import Addresses from "../models/Addresses.js";
+import User from "../models/User.js";
 
 const sequelize = connection;
 
@@ -12,11 +13,14 @@ export async function addOrEditUserAddress({
     pincode,
     defaultAddress = 0,
     addressId = null,
-    addressName = ""
+    addressName = "",
+    deliverTo=null,
+    phoneNumber=null
   }) {
     try {
+        console.log("mandatory params ",deliverTo,phoneNumber)
       // ✅ Validate input parameters
-      if (!userId || !addressLine1 || !state || !country || !pincode) {
+      if (!userId || !addressLine1 || !state || !country || !pincode|| !deliverTo || !phoneNumber) {
         throw new Error("Missing required parameters: userId, addressLine1, state, country, pincode");
       }
   
@@ -46,10 +50,31 @@ export async function addOrEditUserAddress({
           fk_user_adderess_id: userAddressId
         }
       });
+
+      if (defaultAddress == 1) {
+        try {
+            await Addresses.update(
+                { is_default: 0 },  // Set is_default to 1
+                { where: { is_default: 1 } }  // Update records where is_default is 0
+            );
+        } catch (error) {
+            console.log("error", error);
+        }
+    }
   
       if (existingAddress) {
         // ✅ Update existing address
-        await existingAddress.update({ is_default: defaultAddress , address_name:addressName  });
+        await existingAddress.update({ 
+            adress_line1: addressLine1,
+            adress_line2: addressLine2,
+            state,
+            country,
+            pincode,
+            is_default: defaultAddress,
+            fk_user_adderess_id: userAddressId,
+            address_name:addressName,
+            deliver_to:deliverTo,
+            phone_number:phoneNumber });
         return { 
           success: true, 
           action: "updated", 
@@ -68,7 +93,9 @@ export async function addOrEditUserAddress({
         pincode,
         is_default: defaultAddress,
         fk_user_adderess_id: userAddressId,
-        address_name:addressName 
+        address_name:addressName,
+        deliver_to:deliverTo,
+        phone_number:phoneNumber 
       });
   
       return { 
@@ -170,3 +197,59 @@ export async function getUserAddresses({ userId }) {
     console.error(error);
   }
 }
+
+//uodateUserData
+
+export async function updateUserData({
+    userId,
+    phone = null,
+    first_name = null,
+    last_name = null,
+  }) {
+    try {
+      // ✅ Validate input parameters
+      if (!userId) {
+        throw new Error("Missing required parameters: userId");
+      }
+  
+      // Dynamically build the update object
+      const updateData = {};
+      console.log("updateUserData", phone, first_name, last_name);
+  
+      if (phone !== null) {
+        // Check if the phone number already exists for another user
+        const existingUser = await User.findOne({
+          where: { phone },
+        });
+  
+        if (existingUser && existingUser.user_id !== userId) {
+          throw new Error("Phone number is already in use by another user.");
+        }
+  
+        updateData.phone = phone;
+      }
+  
+      if (first_name !== null) updateData.first_name = first_name;
+      if (last_name !== null) updateData.last_name = last_name;
+  
+      if (Object.keys(updateData).length === 0) {
+        throw new Error("No data provided to update.");
+      }
+  
+      await User.update(updateData, {
+        where: { user_id: userId },
+      });
+  
+      return {
+        success: true,
+        action: "update",
+        message: "User Data Updated",
+      };
+    } catch (error) {
+      console.error("❌ User update error:", error);
+      return {
+        success: false,
+        message: `User operation failed: ${error.message}`,
+      };
+    }
+  }

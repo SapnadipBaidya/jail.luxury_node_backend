@@ -7,8 +7,14 @@ const router = express.Router();
 // ✅ Helper function to handle common logic
 const handleRequest = async (req, res, controllerMethod) => {
   try {
-    const { payloadObj } = req.body;
-    payloadObj.userId = req.user.user_id; // Attach userId from the authenticated user
+    let { payloadObj } = req?.body;
+    if (payloadObj) {
+        payloadObj.userId = req?.user?.user_id; // Attach userId from the authenticated user
+    }else{
+        payloadObj = {}
+        payloadObj.userId = req?.user?.user_id;
+    }
+
 
     console.log("Request Payload:", payloadObj);
 
@@ -32,7 +38,13 @@ router.post("/deleteUserAddress", verifyToken, async (req, res) => {
 
 // ✅ Get User Addresses
 router.post("/getUserAddresses", verifyToken, async (req, res) => {
+    console.log("req.user",req.user)
   await handleRequest(req, res, usersController.getUserAddresses);
+});
+
+router.post("/updateUserData", verifyToken, async (req, res) => {
+    console.log("req.user",req.user)
+  await handleRequest(req, res, usersController.updateUserData);
 });
 
 export default router;

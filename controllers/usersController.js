@@ -14,4 +14,9 @@ export async function deleteUserAddress(obj) {
   export async function getUserAddresses(obj) {
     return await usersService.getUserAddresses(obj);
   }
-   
+  
+
+
+  export async function updateUserData(obj) {
+    return await usersService.updateUserData(obj);
+  }

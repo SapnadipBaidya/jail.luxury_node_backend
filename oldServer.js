@@ -186,6 +186,7 @@ app.get("/success", verifyToken,async (req, res) => {
         if (!user) {
             return res.status(404).json({ error: "User not found" });
         }
+        console.log("user obj",user)
 
         // Send user details (excluding sensitive info)
         res.status(200).json({
@@ -193,6 +194,10 @@ app.get("/success", verifyToken,async (req, res) => {
                 id: user.user_id,
                 name: user.first_name,
                 email: user.email,
+                phone: user.phone,
+                first_name:user.first_name,
+                last_name:user.last_name
+
             },
         });  
     } catch (error) {

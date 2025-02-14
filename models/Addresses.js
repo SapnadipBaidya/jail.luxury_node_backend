@@ -44,6 +44,14 @@ Addresses.init(
       type: DataTypes.BIGINT,
       allowNull: false,
     },
+    deliver_to: {
+        type: DataTypes.STRING(300),
+        allowNull: false,
+      },
+      phone_number: {
+        type: DataTypes.STRING(15),
+        allowNull: false,
+      },
   },
   {
     sequelize,
