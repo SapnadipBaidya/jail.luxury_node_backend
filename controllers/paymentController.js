@@ -1,11 +1,11 @@
 import * as paymentsService from "../service/paymentsService.js";
 
-export async function checkout({gender,userId=null}) {
-  return await paymentsService.checkout();
+export async function checkout(filterObj) {
+  return await paymentsService.itemsCheckout(filterObj); 
 }
 
 export async function verification(FilterObj) {
-  return await paymentsService.verification();
+  return await paymentsService.paymentVerification();
 }
 
 
