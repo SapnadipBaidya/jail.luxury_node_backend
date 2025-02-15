@@ -5,16 +5,22 @@ import * as paymentController from "../../controllers/paymentController.js";
 
 const router = express.Router();
 
-
 // ✅ checkout Route
 router.post("/checkout", verifyToken, async (req, res) => {
-  await handleRequest(req, res, paymentController.checkout);
+  try {
+    await handleRequest(
+      req,
+      res,
+      paymentController.checkout
+    );
+  } catch (error) {
+    res.status(500).send({ status: "failed" });
+  }
 });
 
 // ✅ verification route
 router.post("/verification", verifyToken, async (req, res) => {
   await handleRequest(req, res, paymentController.verification);
 });
-
 
 export default router;

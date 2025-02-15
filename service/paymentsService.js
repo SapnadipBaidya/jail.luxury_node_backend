@@ -17,10 +17,10 @@ export async function paymentVerification() {
   }
 }
 
-export async function itemsCheckout({currency="INR",name,amount}) {
+export async function itemsCheckout({currency="INR",name,amount,userId}) {
     try {
         // Create an entry for razorpay
-        console.log("itemsCheckout",name,amount)
+        console.log("itemsCheckout",name,amount,userId)
         const order = await razorpay.orders.create({
           amount: Number(amount * 100),
           currency,
@@ -33,7 +33,7 @@ export async function itemsCheckout({currency="INR",name,amount}) {
         // });
 
         console.log("order",order)
-        return null;
+        return order;
       } catch (error) {
         console.log(error);
         return null;
