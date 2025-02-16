@@ -20,7 +20,15 @@ router.post("/checkout", verifyToken, async (req, res) => {
 
 // ✅ verification route
 router.post("/verification", verifyToken, async (req, res) => {
-  await handleRequest(req, res, paymentController.verification);
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+      }
+      try {
+        await handleRequest(req, res, paymentController.verification);
+      } catch (error) {
+        res.status(500).send({ status: "failed" });
+      }
+
 });
 
 export default router;
