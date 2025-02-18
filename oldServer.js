@@ -12,14 +12,14 @@ import User from "./models/User.js";
 import connection from "./config/connection.js";
 import dotenv from "dotenv";
 import { verifyToken } from "./utils/verifyToken.js";
-
+import connectSessionSequelize from 'connect-session-sequelize';
 import jwt from "jsonwebtoken";
 dotenv.config();
 
 const sequelize = connection;
 const app = express();
 const PORT = process.env.PORT || 3001;
-
+const SequelizeStore = connectSessionSequelize(session.Store);
 
 
 
@@ -58,11 +58,18 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+
+
+
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "your_secret_key",
-    resave: false,
     saveUninitialized: true,
+    store: new SequelizeStore({
+      db: sequelize,
+    }),
+    resave: false, // we support the touch method so per the express-session docs this should be set to false
+    proxy: true, // if you do SSL outside of node.
   })
 );
 

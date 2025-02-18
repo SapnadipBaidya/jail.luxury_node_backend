@@ -67,7 +67,7 @@ export async function addOrEditCart({
     modifiedQuantity += quantity;
     if (existingItem  && modifiedQuantity > 0) {
       await sequelize.query(
-        `UPDATE cart_items SET item_price = ?, quantity = ?, fk_product_id = ?, fk_cart_id = ?, updated_at = NOW() WHERE fk_product_details_id = ?;`, // Fixed: Added a missing value for fk_cart_id
+        `UPDATE cart_items SET item_price = ?, quantity = ?, updated_at = NOW() WHERE fk_product_id = ? and fk_cart_id = ? and fk_product_details_id = ?;`, // Fixed: Added a missing value for fk_cart_id
         {
           replacements: [
             itemPrice,
