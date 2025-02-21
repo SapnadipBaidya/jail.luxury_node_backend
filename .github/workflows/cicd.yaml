@@ -26,19 +26,19 @@ jobs:
       # Configure Docker for Artifact Registry
       - name: Configure Docker
         run: |
-          gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev --quiet
+          gcloud auth configure-docker us-east-1-docker.pkg.dev --quiet
 
       # Build and push Docker image
       - name: Build and Push Docker Image
         run: |
-          docker build -t ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/my-repo/node-app:${{ github.sha }} .
-          docker push ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/my-repo/node-app:${{ github.sha }}
+          docker build -t us-east-1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/my-repo/node-app:${{ github.sha }} .
+          docker push us-east-1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/my-repo/node-app:${{ github.sha }}
 
       # Deploy to Cloud Run
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy node-app \
-            --image ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/my-repo/node-app:${{ github.sha }} \
+            --image us-east-1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/my-repo/node-app:${{ github.sha }} \
             --platform managed \
-            --region ${{ secrets.GCP_REGION }} \
+            --region us-east-1 \
             --allow-unauthenticated
