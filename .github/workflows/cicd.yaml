@@ -4,8 +4,8 @@ jobs:
     env:
       GCP_PROJECT_ID: jail-luxury-backend-node-dev
       GCP_REGION: us-central1
-      REPO_NAME: my-repo
-      IMAGE_NAME: node-app
+      REPO_NAME: jail.luxury_node_backend
+      IMAGE_NAME: jail_backend_docker_image:latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
