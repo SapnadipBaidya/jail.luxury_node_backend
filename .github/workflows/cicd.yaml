@@ -3,42 +3,43 @@ name: Deploy to Cloud Run
 on:
   push:
     branches:
-      - UAT
+      - main
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    env:
+      GCP_PROJECT_ID: jail-luxury-backend-node-dev
+      GCP_REGION: us-central1  # Replace with your region
+      IMAGE_NAME: node-app
+      REPO_NAME: my-repo
+
     steps:
-      # Checkout the repository
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Authenticate to Google Cloud
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      # Set up Google Cloud SDK
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
-      # Configure Docker for Artifact Registry
-      - name: Configure Docker
+      - name: Configure Docker for Artifact Registry
         run: |
-          gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev --quiet
+          gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev --quiet
 
-      # Build and push Docker image
       - name: Build and Push Docker Image
         run: |
-          docker build -t ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/my-repo/node-app:${{ github.sha }} .
-          docker push ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/my-repo/node-app:${{ github.sha }}
+          IMAGE_TAG=${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          docker build -t $IMAGE_TAG .
+          docker push $IMAGE_TAG
 
-      # Deploy to Cloud Run
       - name: Deploy to Cloud Run
         run: |
-          gcloud run deploy node-app \
-            --image ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/my-repo/node-app:${{ github.sha }} \
+          gcloud run deploy ${{ env.IMAGE_NAME }} \
+            --image ${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
             --platform managed \
-            --region ${{ secrets.GCP_REGION }} \
+            --region ${{ env.GCP_REGION }} \
             --allow-unauthenticated
