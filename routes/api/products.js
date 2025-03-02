@@ -79,6 +79,7 @@ router.get("/findProductsByCategoryName", async (req, res) => {
       sortOrder,
       page,
       limit,
+      price,
       gender
     } = req.query;
 
@@ -105,7 +106,11 @@ router.get("/findProductsByCategoryName", async (req, res) => {
       ? sizeFilter.split(",").map((item) => parseInt(item, 10)) 
       : null;
 
-    console.log("colorArray", colorArray, "sizeArray", sizeArray);
+    const priceArray = normalizeParam(price) 
+      ? price.split(",").map((item) => parseInt(item)) 
+      : null;      
+
+    console.log("colorArray", colorArray, "sizeArray", sizeArray,"priceArray",priceArray);
 
     const products = await productController.findProductsByCategoryName({
       categoryName: normalizeParam(categoryName),
@@ -116,6 +121,7 @@ router.get("/findProductsByCategoryName", async (req, res) => {
       page: parseInt(normalizeParam(page, "1"), 10),
       limit: parseInt(normalizeParam(limit, "12"), 10),
       userId,
+      priceArray,
       gender: normalizeParam(gender),
     });
 
@@ -181,7 +187,7 @@ router.get("/findBestSellerByGender", async (req, res) => {
 
 
 router.get("/searchByNameColorCategory", async (req, res) => {
-  const { userInput, page = 1, limit = 12, color, gender, sortOrder = "", sortBy = "" } = req.query;
+  const { userInput, page = 1, limit = 12, color, gender, sortOrder = "", sortBy = "", price } = req.query;
 
   // Edge Case: Handle missing or invalid userInput
   if (!userInput || typeof userInput !== "string" || userInput.trim() === "") {
@@ -198,6 +204,9 @@ router.get("/searchByNameColorCategory", async (req, res) => {
     const colorArray = normalizeParam(color) 
       ? color.split(",").map((item) => parseInt(item, 10))
       : null;
+    const priceArray =  normalizeParam(price) 
+    ? price.split(",").map((item) => parseInt(item))
+    : null;
 
     console.log("colorArray:", colorArray);
 
@@ -208,8 +217,9 @@ router.get("/searchByNameColorCategory", async (req, res) => {
       limit: parseInt(limit),
       colorArray,
       gender: normalizeParam(gender),
-      sortOrder,
-      sortBy,
+      sortOrder : normalizeParam(sortOrder) ,
+      sortBy: normalizeParam(sortBy),
+      priceArray
     });
 
     // Edge Case: Handle no results found

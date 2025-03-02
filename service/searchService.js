@@ -115,11 +115,12 @@ export async function searchByProductNameV1({
     colorArray = [], 
     gender=null, 
     sortOrder = 'ASC', 
-    sortBy = 'product_name', 
+    sortBy = 'product_price_local', 
     page = 1, 
-    limit = 10 
+    limit = 10 ,
+    priceArray=[]
 }) {
-    console.log("searchByProductNameV1 ", { userInput, colorArray, gender, sortOrder, sortBy, page, limit });
+    console.log("searchByProductNameV1 ", { userInput,priceArray, colorArray, gender, sortOrder, sortBy, page, limit });
 
     try {
         // Validate page and limit
@@ -163,6 +164,10 @@ export async function searchByProductNameV1({
             query += ` AND p.gender = :gender`;
         }
 
+        if (priceArray?.length > 0) {
+            query += ` AND p.product_price_local BETWEEN ${priceArray[0]} AND  ${priceArray[1]}`;
+        }
+
         // Add GROUP BY clause
         query += `
             GROUP BY 
@@ -174,6 +179,8 @@ export async function searchByProductNameV1({
                 p.more_details, 
                 pg.gallary
         `;
+
+    
 
         // Add sorting if sortBy and sortOrder are provided
         if (sortBy && sortOrder) {

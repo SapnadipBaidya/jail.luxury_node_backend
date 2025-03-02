@@ -285,6 +285,7 @@ export async function findProductsByCategoryName({
   categoryName,
   colorFilter = null,
   sizeFilter = null,
+  priceArray=null,
   gender = null,
   sortBy = "latest_updated",
   sortOrder = "DESC",
@@ -355,6 +356,12 @@ export async function findProductsByCategoryName({
     if (sizeFilter !== null && sizeFilter !== undefined) {
       whereClauses.push(`pd.fk_size_id IN (:sizeFilter)`);
       replacements.sizeFilter = sizeFilter;
+    }
+    //price filter
+    if (priceArray != null && priceArray !== undefined && priceArray.length >= 2) {
+      whereClauses.push(`p.product_price_local >= :priceStart AND p.product_price_local <= :priceEnd`);
+      replacements.priceStart = priceArray[0];
+      replacements.priceEnd = priceArray[1];
     }
 
     // Gender filter
