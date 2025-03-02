@@ -5,6 +5,20 @@ import { getUserFromToken } from "../../utils/verifyToken.js";
 
 const router = Router();
 
+// Helper function to normalize query parameters
+const normalizeParam = (param, defaultValue = null) => {
+  if (param =="undefined" || param == "null" || param == undefined || param == null) {
+      return null;
+  }
+
+  // Check if param is a string and trim it if necessary
+  if (typeof param == "string" && param.trim() == "") {
+      return defaultValue;
+  }
+  // Return the param as-is for all other cases
+  return param;
+};
+
 router.post("/findAllProductsByCatagoryId", async (req, res) => {
   console.log(req.body);
   const { payloadObj } = req.body;
@@ -68,13 +82,6 @@ router.get("/findProductsByCategoryName", async (req, res) => {
       gender
     } = req.query;
 
-    // Helper function to normalize query parameters
-    const normalizeParam = (param, defaultValue = null) => {
-      if (param === undefined || param === null || param.trim() === "") {
-        return defaultValue;
-      }
-      return param;
-    };
 
     let userId = null;
     try {
@@ -174,7 +181,7 @@ router.get("/findBestSellerByGender", async (req, res) => {
 
 
 router.get("/searchByNameColorCategory", async (req, res) => {
-  const { userInput,page=1,limit=12 } = req.query;
+  const { userInput,page=1,limit=12 ,color,sortOrder="",sortBy=""} = req.query;
 
   // Edge Case: Handle missing or invalid categoryName
   if (!userInput || typeof userInput !== "string" || userInput.trim() === "") {
@@ -185,11 +192,15 @@ router.get("/searchByNameColorCategory", async (req, res) => {
   }
 
   try {
-    console.log("userInput:", userInput);
+    console.log("userInput:", userInput,color,normalizeParam(color) );
 
+    const colorArray = normalizeParam(color) 
+    ? color.split(",").map((item) => parseInt(item, 10)) 
+    : null;
+console.log("colorArray",colorArray)
     // Call the search function with userInput
     const data = await searchController.searchByNameColorCategory({
-      userInput: userInput,page,limit
+      userInput,page,limit,colorArray
     });
 
     // Edge Case: Handle no results found
