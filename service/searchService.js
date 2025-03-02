@@ -142,8 +142,9 @@ export async function searchByProductNameV1({ userInput, colorArray=null, sortOr
             INNER JOIN product_gallary pg ON pg.product_img_id = p.fk_gallary_id
             INNER JOIN product_colors col ON p.fk_color_id = col.pk_color_id
             WHERE 
-                p.product_name LIKE CONCAT('%', :userInput, '%')
+                MATCH(p.product_name) AGAINST(:userInput IN BOOLEAN MODE)
         `;
+// ALTER TABLE products ADD FULLTEXT(product_name); This will enable full-text search capabilities for the product_name column.
 
         // Add color filter only if color is not empty
         if (colorArray!=undefined ||colorArray!=null || colorArray && colorArray.length > 0) {
