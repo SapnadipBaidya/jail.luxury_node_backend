@@ -181,33 +181,42 @@ router.get("/findBestSellerByGender", async (req, res) => {
 
 
 router.get("/searchByNameColorCategory", async (req, res) => {
-  const { userInput,page=1,limit=12 ,color,sortOrder="",sortBy=""} = req.query;
+  const { userInput, page = 1, limit = 12, color, gender, sortOrder = "", sortBy = "" } = req.query;
 
-  // Edge Case: Handle missing or invalid categoryName
+  // Edge Case: Handle missing or invalid userInput
   if (!userInput || typeof userInput !== "string" || userInput.trim() === "") {
     return res.status(400).send({
       status: "error",
-      message: "Invalid or missing categoryName parameter.",
+      message: "Invalid or missing userInput parameter.",
     });
   }
 
   try {
-    console.log("userInput:", userInput,color,normalizeParam(color) );
+    console.log("userInput:", userInput, "color:", color, "normalized color:", normalizeParam(color));
 
+    // Parse colorArray if color is provided
     const colorArray = normalizeParam(color) 
-    ? color.split(",").map((item) => parseInt(item, 10)) 
-    : null;
-console.log("colorArray",colorArray)
-    // Call the search function with userInput
+      ? color.split(",").map((item) => parseInt(item, 10))
+      : null;
+
+    console.log("colorArray:", colorArray);
+
+    // Call the search function with userInput and other parameters
     const data = await searchController.searchByNameColorCategory({
-      userInput,page,limit,colorArray
+      userInput,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      colorArray,
+      gender: normalizeParam(gender),
+      sortOrder,
+      sortBy,
     });
 
     // Edge Case: Handle no results found
-    if (data.length === 0 || data === "Nothing Found") {
+    if (!data || data.length === 0 || data === "Nothing Found") {
       return res.status(404).send({
         status: "success",
-        message: "No products found for the given category.",
+        message: "No products found for the given criteria.",
         data: [],
       });
     }
@@ -215,8 +224,13 @@ console.log("colorArray",colorArray)
     // Success response
     res.status(200).send(data);
   } catch (error) {
-    console.error("Error in /searchByNameColorCategory:", error, {
+    console.error("Error in /searchByNameColorCategory:", {
+      error: error.message,
       userInput,
+      color,
+      gender,
+      page,
+      limit,
     });
 
     // Error response
@@ -225,7 +239,5 @@ console.log("colorArray",colorArray)
       message: "An error occurred while processing your request.",
     });
   }
-  }
-);
-
+});
 export default router;

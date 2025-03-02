@@ -110,15 +110,23 @@ export async function searchByNameColorCategory({ userInput, page, limit }) {
 }
 
 
-export async function searchByProductNameV1({ userInput, colorArray=null, sortOrder, sortBy, page, limit }) {
-    console.log("searchByProductNameV1 ", "userInput ", userInput, "colorArray ", colorArray, "sortOrder ", sortOrder, "sortBy ", sortBy, "page ", page, "limit ", limit);
+export async function searchByProductNameV1({ 
+    userInput, 
+    colorArray = [], 
+    gender=null, 
+    sortOrder = 'ASC', 
+    sortBy = 'product_name', 
+    page = 1, 
+    limit = 10 
+}) {
+    console.log("searchByProductNameV1 ", { userInput, colorArray, gender, sortOrder, sortBy, page, limit });
 
     try {
         // Validate page and limit
-        page = parseInt(page) || 1;
-        limit = parseInt(limit) || 10;
+        page = parseInt(page);
+        limit = parseInt(limit);
 
-        if (page < 1 || limit < 1) {
+        if (isNaN(page) || isNaN(limit) || page < 1 || limit < 1) {
             throw new Error("Invalid page or limit. Both must be positive integers.");
         }
 
@@ -144,11 +152,15 @@ export async function searchByProductNameV1({ userInput, colorArray=null, sortOr
             WHERE 
                 MATCH(p.product_name) AGAINST(:userInput IN BOOLEAN MODE)
         `;
-// ALTER TABLE products ADD FULLTEXT(product_name); This will enable full-text search capabilities for the product_name column.
 
-        // Add color filter only if color is not empty
-        if (colorArray!=undefined ||colorArray!=null || colorArray && colorArray.length > 0) {
+        // Add color filter if colorArray is provided and not empty
+        if (colorArray?.length > 0) {
             query += ` AND p.fk_color_id IN (:colorArray)`;
+        }
+
+        // Add gender filter if gender is provided
+        if (gender) {
+            query += ` AND p.gender = :gender`;
         }
 
         // Add GROUP BY clause
@@ -169,22 +181,17 @@ export async function searchByProductNameV1({ userInput, colorArray=null, sortOr
         }
 
         // Add pagination
-        query += ` LIMIT :limit OFFSET :offset;`;
-
-        // Add pagination
         const offset = (page - 1) * limit;
+        query += ` LIMIT :limit OFFSET :offset;`;
 
         // Define replacements
         const replacements = {
             userInput,
             limit,
             offset,
+            ...(colorArray?.length > 0 && { colorArray }),
+            ...(gender && { gender }),
         };
-
-        // Add color to replacements only if it's not empty
-        if (colorArray!=undefined ||colorArray!=null || colorArray && colorArray.length > 0) {
-            replacements.colorArray = colorArray;
-        }
 
         // Execute query
         const [results] = await sequelize.query(query, { replacements });
@@ -193,8 +200,13 @@ export async function searchByProductNameV1({ userInput, colorArray=null, sortOr
         // Return results or empty array if nothing is found
         return results.length > 0 ? results : [];
     } catch (error) {
-        console.error('Error in searchByNameColorCategory:', error, {
+        console.error('Error in searchByProductNameV1:', {
+            error: error.message,
             userInput,
+            colorArray,
+            gender,
+            sortOrder,
+            sortBy,
             page,
             limit,
         });
