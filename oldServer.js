@@ -44,7 +44,7 @@ app.use(async (req, res, next) => {
 
 const allowedOrigins =
   process.env.NODE_ENV === "production"
-    ? ["https://your-frontend-domain.com"] // Production origin
+    ? [process.env.UI_ORIGIN] // Production origin
     : ["http://localhost:3000"]; // Development origin
 
 app.use(
@@ -174,7 +174,7 @@ app.get(
       });
   
 
-    res.redirect(`http://localhost:3000/`);
+    res.redirect(allowedOrigins);
   }
 );
 
